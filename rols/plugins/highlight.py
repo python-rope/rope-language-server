@@ -40,9 +40,11 @@ def rols_document_highlight(config, workspace, document, position):
         results.append(
             {
                 "range": _rope_utils.region_to_range(source, start, end),
-                "kind": lsp.DocumentHighlightKind.Write
-                if is_write
-                else lsp.DocumentHighlightKind.Read,
+                "kind": (
+                    lsp.DocumentHighlightKind.Write
+                    if is_write
+                    else lsp.DocumentHighlightKind.Read
+                ),
             }
         )
     return results

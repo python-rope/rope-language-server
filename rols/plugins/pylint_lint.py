@@ -293,7 +293,7 @@ def _run_pylint_stdio(pylint_executable, document, flags):
         cmd.extend(flags)
         cmd.extend(["--from-stdin", document.path])
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    (stdout, stderr) = p.communicate(document.source.encode())
+    stdout, stderr = p.communicate(document.source.encode())
     if stderr:
         log.error("Error while running pylint '%s'", stderr.decode())
     return stdout.decode()

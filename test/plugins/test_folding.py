@@ -9,8 +9,7 @@ from rols.plugins.folding import rols_folding_range
 from rols.workspace import Document
 
 DOC_URI = uris.from_fs_path(__file__)
-DOC = dedent(
-    """
+DOC = dedent("""
 def func(arg1, arg2, arg3,
          arg4, arg5, default=func(
              2, 3, 4
@@ -79,11 +78,9 @@ with open('doc', 'r') as f:
 
 def testC():
     pass
-"""
-)
+""")
 
-SYNTAX_ERR = dedent(
-    """
+SYNTAX_ERR = dedent("""
 def func(arg1, arg2, arg3,
          arg4, arg5, default=func(
              2, 3, 4
@@ -112,8 +109,7 @@ for i in range(0, 3)
     for j in range(0, i):
         if i % 2 == 1:
             pass
-"""
-)
+""")
 
 
 def test_folding(workspace) -> None:
