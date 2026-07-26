@@ -24,7 +24,7 @@ This server can be configured using the `workspace/didChangeConfiguration` metho
 | `rols.plugins.jedi.prioritize_extra_paths` | `boolean` | Whether to place extra_paths at the beginning (true) or end (false) of `sys.path` | `false` |
 | `rols.plugins.jedi.env_vars` | `object` | Define environment variables for jedi.Script and Jedi.names. | `null` |
 | `rols.plugins.jedi.environment` | `string` | Define environment for jedi.Script and Jedi.names. | `null` |
-| `rols.plugins.jedi_completion.enabled` | `boolean` | Enable or disable the plugin. | `true` |
+| `rols.plugins.jedi_completion.enabled` | `boolean` | Enable or disable the plugin. Disabled by default in favour of the native Rope completion (rope_completion). | `false` |
 | `rols.plugins.jedi_completion.include_params` | `boolean` | Auto-completes methods and classes with tabstops for each parameter. | `true` |
 | `rols.plugins.jedi_completion.include_class_objects` | `boolean` | Adds class objects as a separate completion item. | `false` |
 | `rols.plugins.jedi_completion.include_function_objects` | `boolean` | Adds function objects as a separate completion item. | `false` |
@@ -71,7 +71,8 @@ This server can be configured using the `workspace/didChangeConfiguration` metho
 | `rols.plugins.rope_autoimport.completions.enabled` | `boolean` | Enable or disable autoimport completions. | `true` |
 | `rols.plugins.rope_autoimport.code_actions.enabled` | `boolean` | Enable or disable autoimport code actions (e.g. for quick fixes). | `true` |
 | `rols.plugins.rope_autoimport.memory` | `boolean` | Make the autoimport database memory only. Drastically increases startup time. | `false` |
-| `rols.plugins.rope_completion.enabled` | `boolean` | Enable or disable the plugin. | `false` |
+| `rols.plugins.rope_completion.enabled` | `boolean` | Enable or disable the plugin. This is the native Rope-based completion provider, enabled by default. | `true` |
+| `rols.plugins.rope_completion.include_params` | `boolean` | Auto-completes methods and classes with tabstops for each parameter. | `true` |
 | `rols.plugins.rope_completion.eager` | `boolean` | Resolve documentation and detail eagerly. | `false` |
 | `rols.plugins.yapf.enabled` | `boolean` | Enable or disable the plugin. | `true` |
 | `rols.rope.extensionModules` | `string` | Builtin and c-extension modules that are allowed to be imported and inspected by rope. | `null` |
