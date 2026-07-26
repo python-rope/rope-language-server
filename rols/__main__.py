@@ -14,7 +14,7 @@ except Exception:
 
 from ._version import __version__
 from .python_lsp import (
-    PythonLSPServer,
+    RopeLanguageServer,
     start_io_lang_server,
     start_tcp_lang_server,
     start_ws_lang_server,
@@ -75,23 +75,14 @@ def main() -> None:
 
     if args.tcp:
         start_tcp_lang_server(
-            args.host, args.port, args.check_parent_process, PythonLSPServer
+            args.host, args.port, args.check_parent_process, RopeLanguageServer
         )
     elif args.ws:
-        start_ws_lang_server(args.port, args.check_parent_process, PythonLSPServer)
+        start_ws_lang_server(args.port, args.check_parent_process, RopeLanguageServer)
     else:
-        stdin, stdout = _binary_stdio()
-        start_io_lang_server(stdin, stdout, args.check_parent_process, PythonLSPServer)
-
-
-def _binary_stdio():
-    """Construct binary stdio streams (not text mode).
-
-    This seems to be different for Window/Unix Python2/3, so going by:
-        https://stackoverflow.com/questions/2850893/reading-binary-data-from-stdin
-    """
-    stdin, stdout = sys.stdin.buffer, sys.stdout.buffer
-    return stdin, stdout
+        # The following works only on py3k
+        stdin, stdout = sys.stdin.buffer, sys.stdout.buffer
+        start_io_lang_server(stdin, stdout, args.check_parent_process, RopeLanguageServer)
 
 
 def _configure_logger(verbose=0, log_config=None, log_file=None) -> None:
