@@ -1,9 +1,9 @@
 # Copyright 2017-2020 Palantir Technologies, Inc.
 # Copyright 2021- Python Language Server Contributors.
 
-from pylsp import lsp, uris
-from pylsp.plugins.highlight import pylsp_document_highlight
-from pylsp.workspace import Document
+from rols import lsp, uris
+from rols.plugins.highlight import rols_document_highlight
+from rols.workspace import Document
 
 DOC_URI = uris.from_fs_path(__file__)
 DOC = """a = "hello"
@@ -16,7 +16,7 @@ def test_highlight(workspace) -> None:
     cursor_pos = {"line": 1, "character": 0}
 
     doc = Document(DOC_URI, workspace, DOC)
-    assert pylsp_document_highlight(doc, cursor_pos) == [
+    assert rols_document_highlight(doc, cursor_pos) == [
         {
             "range": {
                 "start": {"line": 0, "character": 0},
@@ -45,7 +45,7 @@ def test_sys_highlight(workspace) -> None:
     cursor_pos = {"line": 0, "character": 8}
 
     doc = Document(DOC_URI, workspace, SYS_DOC)
-    assert pylsp_document_highlight(doc, cursor_pos) == [
+    assert rols_document_highlight(doc, cursor_pos) == [
         {
             "range": {
                 "start": {"line": 0, "character": 7},

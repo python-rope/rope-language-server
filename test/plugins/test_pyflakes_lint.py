@@ -3,9 +3,9 @@
 
 import sys
 
-from pylsp import lsp, uris
-from pylsp.plugins import pyflakes_lint
-from pylsp.workspace import Document
+from rols import lsp, uris
+from rols.plugins import pyflakes_lint
+from rols.workspace import Document
 
 DOC_URI = uris.from_fs_path(__file__)
 DOC = """import sys
@@ -30,7 +30,7 @@ import sys
 
 def test_pyflakes(workspace) -> None:
     doc = Document(DOC_URI, workspace, DOC)
-    diags = pyflakes_lint.pylsp_lint(workspace, doc)
+    diags = pyflakes_lint.rols_lint(workspace, doc)
 
     # One we're expecting is:
     msg = "'sys' imported but unused"
@@ -42,7 +42,7 @@ def test_pyflakes(workspace) -> None:
 
 def test_syntax_error_pyflakes(workspace) -> None:
     doc = Document(DOC_URI, workspace, DOC_SYNTAX_ERR)
-    diag = pyflakes_lint.pylsp_lint(workspace, doc)[0]
+    diag = pyflakes_lint.rols_lint(workspace, doc)[0]
 
     if sys.version_info[:2] >= (3, 10):
         assert diag["message"] == "expected ':'"
@@ -54,7 +54,7 @@ def test_syntax_error_pyflakes(workspace) -> None:
 
 def test_undefined_name_pyflakes(workspace) -> None:
     doc = Document(DOC_URI, workspace, DOC_UNDEFINED_NAME_ERR)
-    diag = pyflakes_lint.pylsp_lint(workspace, doc)[0]
+    diag = pyflakes_lint.rols_lint(workspace, doc)[0]
 
     assert diag["message"] == "undefined name 'b'"
     assert diag["range"]["start"] == {"line": 0, "character": 4}
@@ -63,7 +63,7 @@ def test_undefined_name_pyflakes(workspace) -> None:
 
 def test_unicode_encoding(workspace) -> None:
     doc = Document(DOC_URI, workspace, DOC_ENCODING)
-    diags = pyflakes_lint.pylsp_lint(workspace, doc)
+    diags = pyflakes_lint.rols_lint(workspace, doc)
 
     assert len(diags) == 1
     assert diags[0]["message"] == "'sys' imported but unused"

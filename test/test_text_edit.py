@@ -1,15 +1,15 @@
 # Copyright 2017-2020 Palantir Technologies, Inc.
 # Copyright 2021- Python Language Server Contributors.
 
-from pylsp import uris
-from pylsp.text_edit import OverLappingTextEditException, apply_text_edits
+from rols import uris
+from rols.text_edit import OverLappingTextEditException, apply_text_edits
 
 DOC_URI = uris.from_fs_path(__file__)
 
 
-def test_apply_text_edits_insert(pylsp) -> None:
-    pylsp.workspace.put_document(DOC_URI, "012345678901234567890123456789")
-    test_doc = pylsp.workspace.get_document(DOC_URI)
+def test_apply_text_edits_insert(rols) -> None:
+    rols.workspace.put_document(DOC_URI, "012345678901234567890123456789")
+    test_doc = rols.workspace.get_document(DOC_URI)
 
     assert (
         apply_text_edits(
@@ -108,9 +108,9 @@ def test_apply_text_edits_insert(pylsp) -> None:
     )
 
 
-def test_apply_text_edits_replace(pylsp) -> None:
-    pylsp.workspace.put_document(DOC_URI, "012345678901234567890123456789")
-    test_doc = pylsp.workspace.get_document(DOC_URI)
+def test_apply_text_edits_replace(rols) -> None:
+    rols.workspace.put_document(DOC_URI, "012345678901234567890123456789")
+    test_doc = rols.workspace.get_document(DOC_URI)
 
     assert (
         apply_text_edits(
@@ -217,9 +217,9 @@ def test_apply_text_edits_replace(pylsp) -> None:
     )
 
 
-def test_apply_text_edits_overlap(pylsp) -> None:
-    pylsp.workspace.put_document(DOC_URI, "012345678901234567890123456789")
-    test_doc = pylsp.workspace.get_document(DOC_URI)
+def test_apply_text_edits_overlap(rols) -> None:
+    rols.workspace.put_document(DOC_URI, "012345678901234567890123456789")
+    test_doc = rols.workspace.get_document(DOC_URI)
 
     did_throw = False
     try:
@@ -275,9 +275,9 @@ def test_apply_text_edits_overlap(pylsp) -> None:
     assert did_throw
 
 
-def test_apply_text_edits_multiline(pylsp) -> None:
-    pylsp.workspace.put_document(DOC_URI, "0\n1\n2\n3\n4")
-    test_doc = pylsp.workspace.get_document(DOC_URI)
+def test_apply_text_edits_multiline(rols) -> None:
+    rols.workspace.put_document(DOC_URI, "0\n1\n2\n3\n4")
+    test_doc = rols.workspace.get_document(DOC_URI)
 
     assert (
         apply_text_edits(

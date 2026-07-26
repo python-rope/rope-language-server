@@ -6,12 +6,12 @@ import tempfile
 from textwrap import dedent
 from unittest.mock import patch
 
-from pylsp import lsp, uris
-from pylsp.plugins import flake8_lint
-from pylsp.workspace import Document
+from rols import lsp, uris
+from rols.plugins import flake8_lint
+from rols.workspace import Document
 
 DOC_URI = uris.from_fs_path(__file__)
-DOC = """import pylsp
+DOC = """import rols
 
 t = "TEST"
 
@@ -32,7 +32,7 @@ def temp_document(doc_text, workspace):
 
 def test_flake8_unsaved(workspace) -> None:
     doc = Document("", workspace, DOC)
-    diags = flake8_lint.pylsp_lint(workspace, doc)
+    diags = flake8_lint.rols_lint(workspace, doc)
     msg = "F841 local variable 'a' is assigned to but never used"
     unused_var = [d for d in diags if d["message"] == msg][0]
 
@@ -47,7 +47,7 @@ def test_flake8_unsaved(workspace) -> None:
 def test_flake8_lint(workspace) -> None:
     name, doc = temp_document(DOC, workspace)
     try:
-        diags = flake8_lint.pylsp_lint(workspace, doc)
+        diags = flake8_lint.rols_lint(workspace, doc)
         msg = "F841 local variable 'a' is assigned to but never used"
         unused_var = [d for d in diags if d["message"] == msg][0]
 
@@ -91,7 +91,7 @@ def test_flake8_respecting_configuration(workspace) -> None:
         workspace.put_document(made[rel]["uri"], contents)
         made[rel]["document"] = workspace._docs[made[rel]["uri"]]
 
-    diags = flake8_lint.pylsp_lint(workspace, made["src/a.py"]["document"])
+    diags = flake8_lint.rols_lint(workspace, made["src/a.py"]["document"])
     assert diags == [
         {
             "source": "flake8",
@@ -106,7 +106,7 @@ def test_flake8_respecting_configuration(workspace) -> None:
         },
     ]
 
-    diags = flake8_lint.pylsp_lint(workspace, made["src/b.py"]["document"])
+    diags = flake8_lint.rols_lint(workspace, made["src/b.py"]["document"])
     assert diags == [
         {
             "source": "flake8",
@@ -123,20 +123,20 @@ def test_flake8_respecting_configuration(workspace) -> None:
 
 
 def test_flake8_config_param(workspace) -> None:
-    with patch("pylsp.plugins.flake8_lint.Popen") as popen_mock:
+    with patch("rols.plugins.flake8_lint.Popen") as popen_mock:
         mock_instance = popen_mock.return_value
         mock_instance.communicate.return_value = [b"", b""]
         flake8_conf = "C:\\some.cfg" if os.name == "nt" else "/tmp/some.cfg"
         workspace._config.update({"plugins": {"flake8": {"config": flake8_conf}}})
         _name, doc = temp_document(DOC, workspace)
-        flake8_lint.pylsp_lint(workspace, doc)
+        flake8_lint.rols_lint(workspace, doc)
         (call_args,) = popen_mock.call_args[0]
         assert "flake8" in call_args
         assert f"--config={flake8_conf}" in call_args
 
 
 def test_flake8_executable_param(workspace) -> None:
-    with patch("pylsp.plugins.flake8_lint.Popen") as popen_mock:
+    with patch("rols.plugins.flake8_lint.Popen") as popen_mock:
         mock_instance = popen_mock.return_value
         mock_instance.communicate.return_value = [b"", b""]
 
@@ -146,7 +146,7 @@ def test_flake8_executable_param(workspace) -> None:
         )
 
         _name, doc = temp_document(DOC, workspace)
-        flake8_lint.pylsp_lint(workspace, doc)
+        flake8_lint.rols_lint(workspace, doc)
 
         (call_args,) = popen_mock.call_args[0]
         assert flake8_executable in call_args
@@ -163,7 +163,7 @@ def get_flake8_cfg_settings(workspace, config_str):
     ) as f:
         f.write(config_str)
 
-    workspace.update_config({"pylsp": {"configurationSources": ["flake8"]}})
+    workspace.update_config({"rols": {"configurationSources": ["flake8"]}})
 
     return workspace._config.plugin_settings("flake8")
 
@@ -185,12 +185,12 @@ exclude =
     assert "exclude" in flake8_settings
     assert len(flake8_settings["exclude"]) == 2
 
-    with patch("pylsp.plugins.flake8_lint.Popen") as popen_mock:
+    with patch("rols.plugins.flake8_lint.Popen") as popen_mock:
         mock_instance = popen_mock.return_value
         mock_instance.communicate.return_value = [b"", b""]
 
         doc = workspace.get_document(doc_uri)
-        flake8_lint.pylsp_lint(workspace, doc)
+        flake8_lint.rols_lint(workspace, doc)
 
     call_args = popen_mock.call_args[0][0]
 
@@ -230,7 +230,7 @@ exclude =
     assert len(flake8_settings["exclude"]) == 2
 
     doc = workspace.get_document(doc_uri)
-    res = flake8_lint.pylsp_lint(workspace, doc)
+    res = flake8_lint.rols_lint(workspace, doc)
     assert not res
 
     os.unlink(os.path.join(workspace.root_path, "setup.cfg"))
@@ -252,7 +252,7 @@ per-file-ignores = **/__init__.py:F401,E402
     assert len(flake8_settings["perFileIgnores"]) == 2
 
     doc = workspace.get_document(doc_uri)
-    res = flake8_lint.pylsp_lint(workspace, doc)
+    res = flake8_lint.rols_lint(workspace, doc)
     assert not res
 
     os.unlink(os.path.join(workspace.root_path, "setup.cfg"))

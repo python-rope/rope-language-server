@@ -5,9 +5,9 @@ from unittest.mock import call, patch
 
 import pytest
 
-from pylsp import IS_WIN
-from pylsp.lsp import NotebookCellKind
-from pylsp.workspace import Notebook
+from rols import IS_WIN
+from rols.lsp import NotebookCellKind
+from rols.workspace import Notebook
 from test.test_utils import (
     CALL_TIMEOUT_IN_SECONDS,
     send_initialize_request,
@@ -68,7 +68,7 @@ def test_workspace_did_change_configuration(client_server_pair) -> None:
     assert len(server.workspace.documents) == 2
 
     server.workspace.update_config(
-        {"pylsp": {"plugins": {"flake8": {"enabled": True}}}}
+        {"rols": {"plugins": {"flake8": {"enabled": True}}}}
     )
 
     assert server.config.plugin_settings("flake8").get("enabled") is True

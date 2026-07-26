@@ -3,7 +3,7 @@
 
 import pytest
 
-from pylsp import IS_WIN
+from rols import IS_WIN
 
 unix_only = pytest.mark.skipif(IS_WIN, reason="Unix only")
 windows_only = pytest.mark.skipif(not IS_WIN, reason="Windows only")

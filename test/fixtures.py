@@ -10,10 +10,10 @@ from pylsp_jsonrpc.dispatchers import MethodDispatcher
 from pylsp_jsonrpc.endpoint import Endpoint
 from pylsp_jsonrpc.exceptions import JsonRpcException
 
-from pylsp import uris
-from pylsp.config.config import Config
-from pylsp.python_lsp import PythonLSPServer
-from pylsp.workspace import Document, Workspace
+from rols import uris
+from rols.config.config import Config
+from rols.python_lsp import RopeLanguageServer
+from rols.workspace import Document, Workspace
 from test.test_utils import CALL_TIMEOUT_IN_SECONDS, ClientServerPair
 
 DOC_URI = uris.from_fs_path(__file__)
@@ -39,7 +39,7 @@ class FakeEditorMethodsMixin:
         return None
 
 
-class FakePythonLSPServer(FakeEditorMethodsMixin, PythonLSPServer):
+class FakeRopeLanguageServer(FakeEditorMethodsMixin, RopeLanguageServer):
     pass
 
 
@@ -65,9 +65,9 @@ class FakeEndpoint(Endpoint):
 
 
 @pytest.fixture
-def pylsp(tmpdir):
+def rols(tmpdir):
     """Return an initialized python LS"""
-    ls = FakePythonLSPServer(StringIO, StringIO, endpoint_cls=FakeEndpoint)
+    ls = FakeRopeLanguageServer(StringIO, StringIO, endpoint_cls=FakeEndpoint)
 
     ls.m_initialize(
         processId=1, rootUri=uris.from_fs_path(str(tmpdir)), initializationOptions={}
@@ -77,9 +77,9 @@ def pylsp(tmpdir):
 
 
 @pytest.fixture
-def pylsp_w_workspace_folders(tmpdir):
+def rols_w_workspace_folders(tmpdir):
     """Return an initialized python LS"""
-    ls = FakePythonLSPServer(StringIO, StringIO, endpoint_cls=FakeEndpoint)
+    ls = FakeRopeLanguageServer(StringIO, StringIO, endpoint_cls=FakeEndpoint)
 
     folder1 = tmpdir.mkdir("folder1")
     folder2 = tmpdir.mkdir("folder2")

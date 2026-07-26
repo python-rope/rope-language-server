@@ -12,9 +12,9 @@ from unittest import mock
 from docstring_to_markdown import UnknownFormatError
 from flaky import flaky
 
-from pylsp import _utils
-from pylsp.lsp import NotebookCellKind
-from pylsp.python_lsp import PythonLSPServer, start_io_lang_server
+from rols import _utils
+from rols.lsp import NotebookCellKind
+from rols.python_lsp import RopeLanguageServer, start_io_lang_server
 
 CALL_TIMEOUT_IN_SECONDS = 30
 
@@ -101,16 +101,16 @@ class ClientServerPair:
                     os.fdopen(csr, "rb"),
                     os.fdopen(scw, "wb"),
                     check_parent_process,
-                    PythonLSPServer,
+                    RopeLanguageServer,
                 ),
             )
             self.server_process.start()
         else:
-            self.server = PythonLSPServer(os.fdopen(csr, "rb"), os.fdopen(scw, "wb"))
+            self.server = RopeLanguageServer(os.fdopen(csr, "rb"), os.fdopen(scw, "wb"))
             self.server_thread = Thread(target=start, args=[self.server])
             self.server_thread.start()
 
-        self.client = PythonLSPServer(os.fdopen(scr, "rb"), os.fdopen(csw, "wb"))
+        self.client = RopeLanguageServer(os.fdopen(scr, "rb"), os.fdopen(csw, "wb"))
         self.client_thread = Thread(target=start, args=[self.client])
         self.client_thread.start()
 

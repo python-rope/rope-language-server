@@ -9,9 +9,9 @@ A Python 3.9+ implementation of the [Language Server Protocol](https://github.co
 The base language server requires [Jedi](https://github.com/davidhalter/jedi) to provide Completions, Definitions, Hover, References, Signature Help, and Symbols:
 
 ```
-pip install python-lsp-server
+pip install rope-language-server
 ```
-This will expose the command `pylsp` on your PATH. Confirm that installation succeeded by running `pylsp --help`.
+This will expose the command `rols` on your PATH. Confirm that installation succeeded by running `rols --help`.
 
 If the respective dependencies are found, the following optional providers will be enabled:
 - [Rope](https://github.com/python-rope/rope) for Completions and renaming
@@ -27,13 +27,13 @@ If the respective dependencies are found, the following optional providers will 
 Optional providers can be installed using the `extras` syntax. To install [YAPF](https://github.com/google/yapf) formatting for example:
 
 ```
-pip install "python-lsp-server[yapf]"
+pip install "rope-language-server[yapf]"
 ```
 
 All optional providers can be installed using:
 
 ```
-pip install "python-lsp-server[all]"
+pip install "rope-language-server[all]"
 ```
 
 If you get an error similar to `'install_requires' must be a string or list of strings` then please upgrade setuptools before trying again.
@@ -44,18 +44,18 @@ pip install -U setuptools
 
 ### Windows and Linux installation
 
-If you use Anaconda/Miniconda, you can install `python-lsp-server` using this conda command
+If you use Anaconda/Miniconda, you can install `rope-language-server` using this conda command
 
 ```
-conda install -c conda-forge python-lsp-server
+conda install -c conda-forge rope-language-server
 ```
 
-Python-lsp-server is available in the repos of every major Linux distribution, and it is usually called `python-lsp-server` or `python3-pylsp`.
+Python-lsp-server is available in the repos of every major Linux distribution, and it is usually called `rope-language-server` or `python3-rols`.
 
 For example, here is how to install it in Debian and Debian-based distributions (E.g. Ubuntu, Pop!_OS, Linux Mint)
 
 ```
-sudo apt-get install python3-pylsp
+sudo apt-get install python3-rols
 ```
 
 or Fedora Linux
@@ -67,7 +67,7 @@ sudo dnf install python3-lsp-server
 or Arch Linux
 
 ```
-sudo pacman -S python-lsp-server
+sudo pacman -S rope-language-server
 ```
 
 Only on Alpine Linux the package is named differently. You can install it there by typing this command in your terminal:
@@ -80,33 +80,33 @@ apk add py3-lsp-server
 
 Installing these plugins will add extra functionality to the language server:
 
-- [pylsp-mypy](https://github.com/Richardk2n/pylsp-mypy): [MyPy](http://mypy-lang.org/) type checking for Python >=3.8.
+- [rols-mypy](https://github.com/Richardk2n/rols-mypy): [MyPy](http://mypy-lang.org/) type checking for Python >=3.8.
 - [python-lsp-isort](https://github.com/chantera/python-lsp-isort): code formatting using [isort](https://github.com/PyCQA/isort) (automatic import sorting).
 - [python-lsp-black](https://github.com/python-lsp/python-lsp-black): code formatting using [Black](https://github.com/psf/black).
 - [pyls-memestra](https://github.com/QuantStack/pyls-memestra): detecting the use of deprecated APIs.
-- [pylsp-rope](https://github.com/python-rope/pylsp-rope): Extended refactoring capabilities using [Rope](https://github.com/python-rope/rope).
+- [rols-rope](https://github.com/python-rope/rols-rope): Extended refactoring capabilities using [Rope](https://github.com/python-rope/rope).
 - [python-lsp-ruff](https://github.com/python-lsp/python-lsp-ruff): Extensive and fast linting using [ruff](https://github.com/charliermarsh/ruff).
 
 Please see the above repositories for examples on how to write plugins for the Python LSP Server.
 
-[cookiecutter-pylsp-plugin](https://github.com/python-lsp/cookiecutter-pylsp-plugin) is a [cookiecutter](https://cookiecutter.readthedocs.io/) template for setting up a basic plugin project for python-lsp-server. It documents all the essentials you need to know to kick start your own plugin project.
+[cookiecutter-rols-plugin](https://github.com/python-lsp/cookiecutter-rols-plugin) is a [cookiecutter](https://cookiecutter.readthedocs.io/) template for setting up a basic plugin project for rope-language-server. It documents all the essentials you need to know to kick start your own plugin project.
 
 Please file an issue if you require assistance writing a plugin.
 
 ## Configuration
 
-Like all language servers, configuration can be passed from the client that talks to this server (i.e. your editor/IDE or other tool that has the same purpose). The details of how this is done depend on the editor or plugin that you are using to communicate with `python-lsp-server`. The configuration options available at that level are documented in [`CONFIGURATION.md`](https://github.com/python-lsp/python-lsp-server/blob/develop/CONFIGURATION.md).
+Like all language servers, configuration can be passed from the client that talks to this server (i.e. your editor/IDE or other tool that has the same purpose). The details of how this is done depend on the editor or plugin that you are using to communicate with `rope-language-server`. The configuration options available at that level are documented in [`CONFIGURATION.md`](https://github.com/python-lsp/rope-language-server/blob/develop/CONFIGURATION.md).
 
-`python-lsp-server` depends on other tools, like flake8 and pycodestyle. These tools can be configured via settings passed from the client (as above), or alternatively from other configuration sources. The following sources are available:
+`rope-language-server` depends on other tools, like flake8 and pycodestyle. These tools can be configured via settings passed from the client (as above), or alternatively from other configuration sources. The following sources are available:
 
 - `pycodestyle`: discovered in `~/.config/pycodestyle`, `setup.cfg`, `tox.ini` and `pycodestyle.cfg`.
 - `flake8`: discovered in `.flake8`, `setup.cfg` and `tox.ini`
 
 The default configuration sources are `pycodestyle` and `pyflakes`. If you would like to use `flake8`, you will need to:
 
-1. Disable `pycodestyle`, `mccabe`, and `pyflakes`, by setting their corresponding `enabled` configurations, e.g. `pylsp.plugins.pycodestyle.enabled`, to `false`. This will prevent duplicate linting messages as flake8 includes these tools.
-1. Set `pylsp.plugins.flake8.enabled` to `true`.
-1. Change the `pylsp.configurationSources` setting (in the value passed in from your client) to `['flake8']` in order to use the flake8 configuration instead.
+1. Disable `pycodestyle`, `mccabe`, and `pyflakes`, by setting their corresponding `enabled` configurations, e.g. `rols.plugins.pycodestyle.enabled`, to `false`. This will prevent duplicate linting messages as flake8 includes these tools.
+1. Set `rols.plugins.flake8.enabled` to `true`.
+1. Change the `rols.configurationSources` setting (in the value passed in from your client) to `['flake8']` in order to use the flake8 configuration instead.
 
 The configuration options available in these config files (`setup.cfg` etc) are documented in the relevant tools:
 
@@ -124,14 +124,14 @@ As an example, to change the list of errors that pycodestyle will ignore, assumi
    ignore = E226,E302,E41
    ```
 
-2. Set the `pylsp.plugins.pycodestyle.ignore` config value from your editor
+2. Set the `rols.plugins.pycodestyle.ignore` config value from your editor
 3. Same as 1, but add to `setup.cfg` file in the root of the project.
 
 
 Python LSP Server can communicate over WebSockets when configured as follows:
 
 ```
-pylsp --ws --port [port]
+rols --ws --port [port]
 ```
 
 The following libraries are required for Web Sockets support:
@@ -140,7 +140,7 @@ The following libraries are required for Web Sockets support:
 You can install this dependency with command below:
 
 ```
-pip install 'python-lsp-server[websockets]'
+pip install 'rope-language-server[websockets]'
 ```
 
 ## LSP Server Features
@@ -164,8 +164,8 @@ Dev install
 
 ```
 # (optional) create conda env
-conda create --name python-lsp-server python=3.11 -y
-conda activate python-lsp-server
+conda create --name rope-language-server python=3.11 -y
+conda activate rope-language-server
 
 pip install -e ".[all,websockets,test]"
 ```
@@ -173,8 +173,8 @@ pip install -e ".[all,websockets,test]"
 Run server with ws
 
 ```
-pylsp --ws -v  # Info level logging
-pylsp --ws -vv # Debug level logging
+rols --ws -v  # Info level logging
+rols --ws -vv # Debug level logging
 ```
 
 To run the test suite:
@@ -194,7 +194,7 @@ ruff format .  # format the document
 After adding configuration options to `schema.json`, refresh the `CONFIGURATION.md` file with
 
 ```
-python scripts/jsonschema2md.py pylsp/config/schema.json CONFIGURATION.md
+python scripts/jsonschema2md.py rols/config/schema.json CONFIGURATION.md
 ```
 
 ## License

@@ -7,9 +7,9 @@ import os
 import tempfile
 from pathlib import Path
 
-from pylsp import lsp, uris
-from pylsp.plugins import pylint_lint
-from pylsp.workspace import Document, Workspace
+from rols import lsp, uris
+from rols.plugins import pylint_lint
+from rols.workspace import Document, Workspace
 
 DOC_URI = uris.from_fs_path(__file__)
 DOC = """import sys
@@ -43,7 +43,7 @@ def write_temp_doc(document, contents) -> None:
 
 def test_pylint(config, workspace) -> None:
     with temp_document(DOC, workspace) as doc:
-        diags = pylint_lint.pylsp_lint(config, workspace, doc, True)
+        diags = pylint_lint.rols_lint(config, workspace, doc, True)
 
         msg = "[unused-import] Unused import sys"
         unused_import = [d for d in diags if d["message"] == msg][0]
@@ -54,7 +54,7 @@ def test_pylint(config, workspace) -> None:
 
         # test running pylint in stdin
         config.plugin_settings("pylint")["executable"] = "pylint"
-        diags = pylint_lint.pylsp_lint(config, workspace, doc, True)
+        diags = pylint_lint.rols_lint(config, workspace, doc, True)
 
         msg = "Unused import sys (unused-import)"
         unused_import = [d for d in diags if d["message"] == msg][0]
@@ -68,7 +68,7 @@ def test_pylint(config, workspace) -> None:
 
 def test_syntax_error_pylint(config, workspace) -> None:
     with temp_document(DOC_SYNTAX_ERR, workspace) as doc:
-        diag = pylint_lint.pylsp_lint(config, workspace, doc, True)[0]
+        diag = pylint_lint.rols_lint(config, workspace, doc, True)[0]
 
         assert diag["message"].startswith("[syntax-error]")
         assert diag["message"].count("expected ':'") or diag["message"].count(
@@ -81,7 +81,7 @@ def test_syntax_error_pylint(config, workspace) -> None:
 
         # test running pylint in stdin
         config.plugin_settings("pylint")["executable"] = "pylint"
-        diag = pylint_lint.pylsp_lint(config, workspace, doc, True)[0]
+        diag = pylint_lint.rols_lint(config, workspace, doc, True)[0]
 
         assert diag["message"].count("expected ':'") or diag["message"].count(
             "invalid syntax"
@@ -96,7 +96,7 @@ def test_lint_free_pylint(config, workspace) -> None:
     # match pylint's naming requirements. We should be keeping this file clean
     # though, so it works for a test of an empty lint.
     ws = Workspace(str(Path(__file__).absolute().parents[2]), workspace._endpoint)
-    assert not pylint_lint.pylsp_lint(
+    assert not pylint_lint.rols_lint(
         config, ws, Document(uris.from_fs_path(__file__), ws), True
     )
 
@@ -106,7 +106,7 @@ def test_lint_caching(workspace) -> None:
     # diagnostics after a run so we can continue displaying them until the file
     # is saved again.
     #
-    # We use PylintLinter.lint directly here rather than pylsp_lint so we can
+    # We use PylintLinter.lint directly here rather than rols_lint so we can
     # pass --disable=invalid-name to pylint, since we want a temporary file but
     # need to ensure that pylint doesn't give us invalid-name when our temp
     # file has capital letters in its name.
@@ -132,8 +132,8 @@ def test_lint_caching(workspace) -> None:
 def test_per_file_caching(config, workspace) -> None:
     # Ensure that diagnostics are cached per-file.
     with temp_document(DOC, workspace) as doc:
-        assert pylint_lint.pylsp_lint(config, workspace, doc, True)
+        assert pylint_lint.rols_lint(config, workspace, doc, True)
 
-    assert not pylint_lint.pylsp_lint(
+    assert not pylint_lint.rols_lint(
         config, workspace, Document(uris.from_fs_path(__file__), workspace), False
     )
