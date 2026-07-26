@@ -19,23 +19,6 @@ This server can be configured using the `workspace/didChangeConfiguration` metho
 | `rols.plugins.flake8.indentSize` | `integer` | Set indentation spaces. | `null` |
 | `rols.plugins.flake8.perFileIgnores` | `array` of `string` items | A pairing of filenames and violation codes that defines which violations to ignore in a particular file, for example: `["file_path.py:W305,W304"]`). | `[]` |
 | `rols.plugins.flake8.select` | `array` of unique `string` items | List of errors and warnings to enable. | `null` |
-| `rols.plugins.jedi.auto_import_modules` | `array` of `string` items | List of module names for jedi.settings.auto_import_modules. | `["numpy"]` |
-| `rols.plugins.jedi.extra_paths` | `array` of `string` items | Define extra paths for jedi.Script. | `[]` |
-| `rols.plugins.jedi.prioritize_extra_paths` | `boolean` | Whether to place extra_paths at the beginning (true) or end (false) of `sys.path` | `false` |
-| `rols.plugins.jedi.env_vars` | `object` | Define environment variables for jedi.Script and Jedi.names. | `null` |
-| `rols.plugins.jedi.environment` | `string` | Define environment for jedi.Script and Jedi.names. | `null` |
-| `rols.plugins.jedi_completion.enabled` | `boolean` | Enable or disable the plugin. Disabled by default in favour of the native Rope completion (rope_completion). | `false` |
-| `rols.plugins.jedi_completion.include_params` | `boolean` | Auto-completes methods and classes with tabstops for each parameter. | `true` |
-| `rols.plugins.jedi_completion.include_class_objects` | `boolean` | Adds class objects as a separate completion item. | `false` |
-| `rols.plugins.jedi_completion.include_function_objects` | `boolean` | Adds function objects as a separate completion item. | `false` |
-| `rols.plugins.jedi_completion.fuzzy` | `boolean` | Enable fuzzy when requesting autocomplete. | `false` |
-| `rols.plugins.jedi_completion.eager` | `boolean` | Resolve documentation and detail eagerly. | `false` |
-| `rols.plugins.jedi_completion.resolve_at_most` | `integer` | How many labels and snippets (at most) should be resolved? | `25` |
-| `rols.plugins.jedi_completion.cache_for` | `array` of `string` items | Modules for which labels and snippets should be cached. | `["pandas", "numpy", "tensorflow", "matplotlib"]` |
-| `rols.plugins.jedi_definition.enabled` | `boolean` | Enable or disable the plugin. | `true` |
-| `rols.plugins.jedi_definition.follow_imports` | `boolean` | The goto call will follow imports. | `true` |
-| `rols.plugins.jedi_definition.follow_builtin_imports` | `boolean` | If follow_imports is True will decide if it follow builtin imports. | `true` |
-| `rols.plugins.jedi_definition.follow_builtin_definitions` | `boolean` | Follow builtin and extension definitions to stubs. | `true` |
 | `rols.plugins.jedi_hover.enabled` | `boolean` | Enable or disable the plugin. | `true` |
 | `rols.plugins.jedi_references.enabled` | `boolean` | Enable or disable the plugin. | `true` |
 | `rols.plugins.jedi_signature_help.enabled` | `boolean` | Enable or disable the plugin. | `true` |
