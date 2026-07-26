@@ -16,7 +16,6 @@ requires-python = ">=3.9"
 dependencies = [
     "docstring-to-markdown",
     "importlib_metadata>=4.8.3;python_version<\"3.10\"",
-    "jedi>=0.17.2,<0.21.0",
     "pluggy>=1.0.0",
     "python-lsp-jsonrpc>=1.1.0,<2.0.0",
     "rope>=1.11.0",
@@ -68,7 +67,6 @@ test = [
 autopep8 = "rols.plugins.autopep8_format"
 folding = "rols.plugins.folding"
 flake8 = "rols.plugins.flake8_lint"
-jedi_completion = "rols.plugins.jedi_completion"
 jedi_hover = "rols.plugins.hover"
 jedi_highlight = "rols.plugins.highlight"
 jedi_references = "rols.plugins.references"
