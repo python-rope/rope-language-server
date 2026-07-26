@@ -16,7 +16,7 @@ def test_highlight(workspace) -> None:
     cursor_pos = {"line": 1, "character": 0}
 
     doc = Document(DOC_URI, workspace, DOC)
-    assert rols_document_highlight(doc, cursor_pos) == [
+    assert rols_document_highlight(doc._config, workspace, doc, cursor_pos) == [
         {
             "range": {
                 "start": {"line": 0, "character": 0},
@@ -37,7 +37,7 @@ def test_highlight(workspace) -> None:
 
 
 SYS_DOC = """import sys
-print sys.path
+print(sys.path)
 """
 
 
@@ -45,7 +45,7 @@ def test_sys_highlight(workspace) -> None:
     cursor_pos = {"line": 0, "character": 8}
 
     doc = Document(DOC_URI, workspace, SYS_DOC)
-    assert rols_document_highlight(doc, cursor_pos) == [
+    assert rols_document_highlight(doc._config, workspace, doc, cursor_pos) == [
         {
             "range": {
                 "start": {"line": 0, "character": 7},
