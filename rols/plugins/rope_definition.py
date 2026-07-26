@@ -16,7 +16,7 @@ def rols_definitions(config, workspace, document, position):
     if project is None:
         return []
 
-    resource = _rope_utils.get_resource(config, document)
+    resource = _rope_utils.get_resource(project, document)
     offset = document.offset_at_position(position)
 
     try:
