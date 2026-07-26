@@ -3,9 +3,9 @@
 from typing import Any
 from unittest.mock import Mock, patch
 
-import jedi
 import parso
 import pytest
+import textwrap
 
 from rols import IS_WIN, lsp, uris
 from rols.config.config import Config
@@ -218,17 +218,19 @@ def test_sort_both() -> None:
 
 
 def test_get_names() -> None:
-    source = """
-    from a import s as e
-    import blah, bleh
-    hello = "str"
-    a, b = 1, 2
-    def someone():
-        soemthing
-    class sfa:
-        sfiosifo
-    """
-    results = get_names(jedi.Script(code=source))
+    source = textwrap.dedent(
+        """
+        from a import s as e
+        import blah, bleh
+        hello = "str"
+        a, b = 1, 2
+        def someone():
+            soemthing
+        class sfa:
+            sfiosifo
+        """
+    )
+    results = get_names(source)
     assert results == {"blah", "bleh", "e", "hello", "someone", "sfa", "a", "b"}
 
 

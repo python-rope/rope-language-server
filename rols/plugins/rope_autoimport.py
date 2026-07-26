@@ -1,12 +1,12 @@
 # Copyright 2022- Python Language Server Contributors.
 
+import ast
 import logging
 import threading
 from collections.abc import Generator
 from typing import Any, Optional, Union
 
 import parso
-from jedi import Script
 from parso.python import tree
 from parso.tree import NodeOrLeaf
 from rope.base.resources import Resource
@@ -38,7 +38,8 @@ class AutoimportCache:
         config: Config,
         workspace: Workspace,
         files: Optional[list[Document]] = None,
-        single_thread: Optional[bool] = True,
+        single_thread: Optional[bool] = False,
+        delay: float = 0,
     ):
         if self.is_blocked():
             return
@@ -57,9 +58,14 @@ class AutoimportCache:
         else:
             # Creating the cache may take 10-20s for a environment with 5k python modules. That's
             # why we decided to move cache creation into its own thread.
-            self.thread = threading.Thread(
-                target=self._reload_cache, args=(workspace, autoimport, resources)
-            )
+            if delay:
+                self.thread = threading.Timer(
+                    delay, self._reload_cache, (workspace, autoimport, resources)
+                )
+            else:
+                self.thread = threading.Thread(
+                    target=self._reload_cache, args=(workspace, autoimport, resources)
+                )
             self.thread.start()
 
     def _reload_cache(
@@ -221,11 +227,22 @@ def _process_statements(
             raise ValueError(f"Unknown feature: {feature}")
 
 
-def get_names(script: Script) -> set[str]:
-    """Get all names to ignore from the current file."""
-    raw_names = script.get_names(definitions=True)
-    log.debug(raw_names)
-    return {name.name for name in raw_names}
+def get_names(source: str) -> set[str]:
+    """Get all names defined in the given source, to ignore for autoimport."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set()
+
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            names.add(node.name)
+        elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            names.add(node.id)
+        elif isinstance(node, ast.alias):
+            names.add(node.asname or node.name.split(".")[0])
+    return names
 
 
 @hookimpl
@@ -252,9 +269,7 @@ def rols_completions(
     word = word_node.value
     log.debug(f"autoimport: searching for word: {word}")
     rope_config = config.settings(document_path=document.path).get("rope", {})
-    ignored_names: set[str] = ignored_names or get_names(
-        document.rope_script(use_document_path=True)
-    )
+    ignored_names: set[str] = ignored_names or get_names(document.source)
     autoimport = workspace._rope_autoimport(rope_config)
     suggestions = list(autoimport.search_full(word, ignored_names=ignored_names))
     results = sorted(
@@ -294,7 +309,7 @@ def get_name_or_module(document, diagnostic) -> str:
     start = diagnostic["range"]["start"]
     return (
         parso.parse(document.lines[start["line"]])
-        .get_leaf_for_position((1, start["character"] + 1))
+        .get_leaf_for_position((1, start["character"]))
         .value
     )
 
@@ -376,7 +391,7 @@ def rols_initialize(config: Config, workspace: Workspace) -> None:
 
     Generates the cache for local and global items.
     """
-    cache.reload_cache(config, workspace)
+    cache.reload_cache(config, workspace, delay=1)
 
 
 @hookimpl
