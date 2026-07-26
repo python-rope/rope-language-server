@@ -1,0 +1,41 @@
+name: Static code analysis
+
+on:
+  push:
+    branches:
+      - rope_dev
+  pull_request:
+    branches:
+      - '*'
+
+concurrency:
+  group: static-${{ forgejo.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Static code analysis
+    runs-on: docker
+    container:
+      image: python:3.9-slim
+    env:
+      CI: 'true'
+      OS: 'linux'
+    timeout-minutes: 5
+    steps:
+      - name: Prepare container
+        run: |
+          apt-get update && apt-get install -y nodejs git
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: static-pip-${{ hashFiles('pyproject.toml') }}
+          restore-keys: static-pip-
+      - run: python -m pip install --upgrade check-jsonschema
+      - name: Validate JSON schema
+        run: check-jsonschema --check-metaschema rols/config/schema.json
+      - name: Ensure JSON schema and Markdown docs are in sync
+        run: |
+          python scripts/jsonschema2md.py rols/config/schema.json EXPECTED_CONFIGURATION.md
+          diff EXPECTED_CONFIGURATION.md CONFIGURATION.md
