@@ -38,10 +38,11 @@ def add_arguments(parser) -> None:
     parser.add_argument("--port", type=int, default=2087, help="Bind to this port")
     parser.add_argument(
         "--check-parent-process",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
+        default=True,
         help="Check whether parent process is still alive using os.kill(ppid, 0) "
         "and auto shut down language server process when parent process is not alive. "
-        "Note that this may not work on a Windows machine.",
+        "Note that this may not work on a Windows machine. (default: enabled)",
     )
 
     log_group = parser.add_mutually_exclusive_group()
@@ -82,7 +83,9 @@ def main() -> None:
     else:
         # The following works only on py3k
         stdin, stdout = sys.stdin.buffer, sys.stdout.buffer
-        start_io_lang_server(stdin, stdout, args.check_parent_process, RopeLanguageServer)
+        start_io_lang_server(
+            stdin, stdout, args.check_parent_process, RopeLanguageServer
+        )
 
 
 def _configure_logger(verbose=0, log_config=None, log_file=None) -> None:

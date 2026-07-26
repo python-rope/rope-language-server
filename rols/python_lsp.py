@@ -217,6 +217,7 @@ class RopeLanguageServer(MethodDispatcher):
     def start(self) -> None:
         """Entry point for the server."""
         self._jsonrpc_stream_reader.listen(self._endpoint.consume)
+        self.m_exit()
 
     def consume(self, message) -> None:
         """Entry point for consumer based server. Alternative to stream listeners."""
@@ -380,9 +381,11 @@ class RopeLanguageServer(MethodDispatcher):
                     log.info("parent process %s is not alive, exiting!", pid)
                     self.m_exit()
                 else:
-                    threading.Timer(
+                    timer = threading.Timer(
                         PARENT_PROCESS_WATCH_INTERVAL, watch_parent_process, args=[pid]
-                    ).start()
+                    )
+                    timer.daemon = True
+                    timer.start()
 
             self.watching_thread = threading.Thread(
                 target=watch_parent_process, args=(processId,)
