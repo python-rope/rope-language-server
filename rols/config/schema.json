@@ -273,11 +273,6 @@
       "default": true,
       "description": "If True includes symbols imported from other libraries."
     },
-    "rols.plugins.jedi_type_definition.enabled": {
-      "type": "boolean",
-      "default": true,
-      "description": "Enable or disable the plugin."
-    },
     "rols.plugins.mccabe.enabled": {
       "type": "boolean",
       "default": true,

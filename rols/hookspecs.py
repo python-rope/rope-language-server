@@ -38,11 +38,6 @@ def rols_definitions(config, workspace, document, position) -> None:
     pass
 
 
-@hookspec(firstresult=True)
-def rols_type_definition(config, document, position):
-    pass
-
-
 @hookspec
 def rols_dispatchers(config, workspace) -> None:
     pass
@@ -114,9 +109,7 @@ def rols_lint(config, workspace, document, is_saved) -> None:
 
 
 @hookspec
-def rols_references(
-    config, workspace, document, position, exclude_declaration
-) -> None:
+def rols_references(config, workspace, document, position, exclude_declaration) -> None:
     pass
 
 

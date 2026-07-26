@@ -292,7 +292,6 @@ class RopeLanguageServer(MethodDispatcher):
             "documentRangeFormattingProvider": True,
             "documentSymbolProvider": True,
             "definitionProvider": True,
-            "typeDefinitionProvider": True,
             "executeCommandProvider": {
                 "commands": flatten(self._hook("rols_commands"))
             },
@@ -428,9 +427,6 @@ class RopeLanguageServer(MethodDispatcher):
 
     def definitions(self, doc_uri, position):
         return flatten(self._hook("rols_definitions", doc_uri, position=position))
-
-    def type_definition(self, doc_uri, position):
-        return self._hook("rols_type_definition", doc_uri, position=position)
 
     def document_symbols(self, doc_uri):
         return flatten(self._hook("rols_document_symbols", doc_uri))
@@ -790,11 +786,6 @@ class RopeLanguageServer(MethodDispatcher):
         if isinstance(document, Cell):
             return self._cell_document__definition(document, position, **_kwargs)
         return self.definitions(textDocument["uri"], position)
-
-    def m_text_document__type_definition(
-        self, textDocument=None, position=None, **_kwargs
-    ):
-        return self.type_definition(textDocument["uri"], position)
 
     def m_text_document__document_highlight(
         self, textDocument=None, position=None, **_kwargs
