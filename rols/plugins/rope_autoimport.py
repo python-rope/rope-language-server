@@ -9,7 +9,9 @@ from typing import Any, Optional, Union
 import parso
 from parso.python import tree
 from parso.tree import NodeOrLeaf
+from rope.base.exceptions import InterruptedTaskError
 from rope.base.resources import Resource
+from rope.contrib.autoimport import models
 from rope.contrib.autoimport.defs import SearchResult
 from rope.contrib.autoimport.sqlite import AutoImport
 
@@ -32,6 +34,7 @@ class AutoimportCache:
 
     def __init__(self) -> None:
         self.thread = None
+        self._stopped = threading.Event()
 
     def reload_cache(
         self,
@@ -43,6 +46,8 @@ class AutoimportCache:
     ):
         if self.is_blocked():
             return
+
+        self._stopped.clear()
 
         memory: bool = config.plugin_settings("rope_autoimport").get("memory", False)
         rope_config = config.settings().get("rope", {})
@@ -66,6 +71,7 @@ class AutoimportCache:
                 self.thread = threading.Thread(
                     target=self._reload_cache, args=(workspace, autoimport, resources)
                 )
+            self.thread.daemon = True
             self.thread.start()
 
     def _reload_cache(
@@ -74,9 +80,38 @@ class AutoimportCache:
         autoimport: AutoImport,
         resources: Optional[list[Resource]] = None,
     ) -> None:
-        task_handle = PylspTaskHandle(workspace)
-        autoimport.generate_cache(task_handle=task_handle, resources=resources)
-        autoimport.generate_modules_cache(task_handle=task_handle)
+        task_handle = PylspTaskHandle(workspace, self._stopped)
+        try:
+            self._generate_cache(autoimport, task_handle, resources)
+            autoimport.generate_modules_cache(
+                task_handle=task_handle, single_thread=True
+            )
+        except InterruptedTaskError:
+            log.debug("Autoimport cache generation cancelled")
+
+    def _generate_cache(
+        self,
+        autoimport: AutoImport,
+        task_handle: PylspTaskHandle,
+        resources: Optional[list[Resource]],
+    ) -> None:
+        if resources is None:
+            resources = autoimport.project.get_python_files()
+        job_set = task_handle.create_jobset(
+            "Generating autoimport cache", len(resources)
+        )
+        autoimport._execute(
+            models.Package.delete_by_package_name,
+            (autoimport.project_package.name,),
+        )
+        for resource in resources:
+            job_set.started_job(f"Working on {resource.path}")
+            autoimport.update_resource(resource, commit=False)
+            job_set.finished_job()
+        autoimport.connection.commit()
+
+    def stop(self) -> None:
+        self._stopped.set()
 
     def is_blocked(self):
         return self.thread and self.thread.is_alive()
@@ -423,6 +458,11 @@ def rols_workspace_configuration_changed(config: Config, workspace: Workspace) -
         cache.reload_cache(config, workspace)
     else:
         log.debug("autoimport: Skipping cache reload.")
+
+
+@hookimpl
+def rols_shutdown(config: Config, workspace: Workspace) -> None:
+    cache.stop()
 
 
 cache: AutoimportCache = AutoimportCache()

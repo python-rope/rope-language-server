@@ -74,11 +74,13 @@ def start_tcp_lang_server(bind_addr, port, check_parent_process, handler_class) 
         {
             # We need to wrap this in staticmethod due to the changes to
             # functools.partial in Python 3.14+
-            "DELEGATE_CLASS": staticmethod(
-                partial(handler_class, check_parent_process=check_parent_process)
-            )
-            if sys.version_info >= (3, 14)
-            else partial(handler_class, check_parent_process=check_parent_process),
+            "DELEGATE_CLASS": (
+                staticmethod(
+                    partial(handler_class, check_parent_process=check_parent_process)
+                )
+                if sys.version_info >= (3, 14)
+                else partial(handler_class, check_parent_process=check_parent_process)
+            ),
             "SHUTDOWN_CALL": partial(shutdown_server, check_parent_process),
         },
     )
@@ -203,7 +205,8 @@ class RopeLanguageServer(MethodDispatcher):
 
         endpoint_cls = endpoint_cls or Endpoint
 
-        # if consumer is None, it is assumed that the default streams-based approach is being used
+        # if consumer is None, it is assumed that the default
+        # streams-based approach is being used
         if consumer is None:
             self._endpoint = endpoint_cls(
                 self, self._jsonrpc_stream_writer.write, max_workers=MAX_WORKERS
@@ -220,7 +223,8 @@ class RopeLanguageServer(MethodDispatcher):
         self.m_exit()
 
     def consume(self, message) -> None:
-        """Entry point for consumer based server. Alternative to stream listeners."""
+        """Entry point for consumer based server. Alternative to stream
+        listeners."""
         # assuming message will be JSON
         self._endpoint.consume(message)
 
@@ -244,9 +248,9 @@ class RopeLanguageServer(MethodDispatcher):
         raise KeyError()
 
     def m_shutdown(self, **_kwargs) -> None:
+        self._hook("rols_shutdown")
         for workspace in self.workspaces.values():
             workspace.close()
-        self._hook("rols_shutdown")
         self._shutdown = True
 
     def m_invalid_request_after_shutdown(self, **_kwargs):
@@ -258,6 +262,8 @@ class RopeLanguageServer(MethodDispatcher):
         }
 
     def m_exit(self, **_kwargs) -> None:
+        if not self._shutdown:
+            self.m_shutdown()
         self._endpoint.shutdown()
         if self._jsonrpc_stream_reader is not None:
             self._jsonrpc_stream_reader.close()
@@ -269,7 +275,8 @@ class RopeLanguageServer(MethodDispatcher):
         return self.workspaces.get(workspace_uri, self.workspace)
 
     def _hook(self, hook_name, doc_uri=None, **kwargs):
-        """Calls hook_name and returns a list of results from all registered handlers"""
+        """Calls hook_name and returns a list of results from all
+        registered handlers"""
         if self.config is None:
             return []
         workspace = self._match_uri_to_workspace(doc_uri)
@@ -285,10 +292,13 @@ class RopeLanguageServer(MethodDispatcher):
         server_capabilities = {
             "codeActionProvider": True,
             "codeLensProvider": {
-                "resolveProvider": False,  # We may need to make this configurable
+                # We may need to make this configurable
+                "resolveProvider": False,
             },
             "completionProvider": {
-                "resolveProvider": True,  # We could know everything ahead of time, but this takes time to transfer
+                # We could know everything ahead of time, but this takes
+                # time to transfer
+                "resolveProvider": True,
                 "triggerCharacters": ["."],
             },
             "documentFormattingProvider": True,
