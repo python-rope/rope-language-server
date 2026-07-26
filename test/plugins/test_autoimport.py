@@ -1,15 +1,20 @@
 # Copyright 2022- Python Language Server Contributors.
 
-from typing import Any
+import textwrap
+import threading
+from typing import Any, cast
 from unittest.mock import Mock, patch
 
 import parso
 import pytest
-import textwrap
+from rope.base.exceptions import InterruptedTaskError
+from rope.base.resources import Resource
 
 from rols import IS_WIN, lsp, uris
 from rols.config.config import Config
+from rols.plugins._rope_task_handle import PylspTaskHandle
 from rols.plugins.rope_autoimport import (
+    AutoimportCache,
     _get_score,
     _should_insert,
     cache,
@@ -218,8 +223,7 @@ def test_sort_both() -> None:
 
 
 def test_get_names() -> None:
-    source = textwrap.dedent(
-        """
+    source = textwrap.dedent("""
         from a import s as e
         import blah, bleh
         hello = "str"
@@ -228,10 +232,51 @@ def test_get_names() -> None:
             soemthing
         class sfa:
             sfiosifo
-        """
-    )
+        """)
     results = get_names(source)
     assert results == {"blah", "bleh", "e", "hello", "someone", "sfa", "a", "b"}
+
+
+def test_autoimport_cache_uses_no_process_pool(workspace, config) -> None:
+    autoimport_cache = AutoimportCache()
+    autoimport = Mock()
+    autoimport.project.get_python_files.return_value = []
+    autoimport.project_package.name = "project"
+    task_handle = PylspTaskHandle(workspace, threading.Event())
+
+    autoimport_cache._generate_cache(autoimport, task_handle, None)
+
+    autoimport.update_resource.assert_not_called()
+    autoimport.connection.commit.assert_called_once_with()
+
+
+def test_autoimport_cache_stops_before_next_resource(workspace) -> None:
+    autoimport_cache = AutoimportCache()
+    resources = [Mock(path="one.py"), Mock(path="two.py")]
+    autoimport = Mock()
+    autoimport.project_package.name = "project"
+    task_handle = PylspTaskHandle(workspace, autoimport_cache._stopped)
+    autoimport.update_resource.side_effect = lambda *_args, **_kwargs: (
+        autoimport_cache.stop()
+    )
+
+    with pytest.raises(InterruptedTaskError):
+        autoimport_cache._generate_cache(
+            autoimport, task_handle, cast(list[Resource], resources)
+        )
+
+    autoimport.update_resource.assert_called_once_with(resources[0], commit=False)
+
+
+def test_autoimport_module_cache_runs_single_threaded(workspace) -> None:
+    autoimport_cache = AutoimportCache()
+    autoimport = Mock()
+    autoimport.project.get_python_files.return_value = []
+
+    autoimport_cache._reload_cache(workspace, autoimport)
+
+    autoimport.generate_modules_cache.assert_called_once()
+    assert autoimport.generate_modules_cache.call_args.kwargs["single_thread"] is True
 
 
 # Tests ruff, flake8 and pyflakes messages
