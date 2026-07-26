@@ -28,18 +28,39 @@ def get_project(config, workspace, document):
         return None
 
 
-def get_resource(config, document):
-    """Resolve the Rope resource backing ``document``.
+def get_resource(project, document):
+    """Resolve the Rope resource backing ``document`` within ``project``.
 
-    In-memory-only documents (notebook cells, transient temp documents) have
-    no on-disk resource; ``None`` is returned in that case so callers can fall
-    back to a source-only request.
+    In-memory-only documents (notebook cells, transient temp documents) or
+    documents that live outside the project root have no usable on-disk
+    resource; ``None`` is returned in that case so callers can fall back to a
+    source-only request.
     """
-    rope_config = config.settings(document_path=document.path).get("rope", {})
+    if project is None:
+        return None
+
+    from rope.base import libutils
+
     try:
-        return document._rope_resource(rope_config)
+        resource = libutils.path_to_resource(project, document.path)
     except Exception:
         return None
+
+    if resource is None or not resource.exists():
+        return None
+
+    # Only use the on-disk resource when its contents match the in-memory
+    # document. Rope resolves same-module definitions/occurrences from the
+    # resource on disk, so a stale buffer (unsaved edits, or a transient test
+    # document whose path points elsewhere) would yield mismatched offsets.
+    # Falling back to ``None`` keeps Rope working from the provided source.
+    try:
+        if resource.read() != document.source:
+            return None
+    except Exception:
+        return None
+
+    return resource
 
 
 def offset_to_position(source, offset):
