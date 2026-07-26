@@ -70,7 +70,7 @@ def test_non_root_project(rols, metafiles) -> None:
     test_uri = uris.from_fs_path(os.path.join(project_root, "hello/test.py"))
     rols.workspace.put_document(test_uri, "assert True")
     test_doc = rols.workspace.get_document(test_uri)
-    assert project_root in test_doc.sys_path()
+    assert project_root in rols.workspace.source_roots(test_doc.path)
 
 
 def test_root_project_with_no_setup_py(rols) -> None:
@@ -79,7 +79,7 @@ def test_root_project_with_no_setup_py(rols) -> None:
     test_uri = uris.from_fs_path(os.path.join(workspace_root, "hello/test.py"))
     rols.workspace.put_document(test_uri, "assert True")
     test_doc = rols.workspace.get_document(test_uri)
-    assert workspace_root in test_doc.sys_path()
+    assert workspace_root in rols.workspace.source_roots(test_doc.path)
 
 
 def test_multiple_workspaces_from_initialize(rols_w_workspace_folders) -> None:

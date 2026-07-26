@@ -1,6 +1,7 @@
 # Copyright 2017-2020 Palantir Technologies, Inc.
 # Copyright 2021- Python Language Server Contributors.
 
+import ast
 import functools
 import io
 import logging
@@ -12,17 +13,31 @@ from contextlib import contextmanager
 from threading import RLock
 from typing import Callable, Optional
 
-import jedi
-
 from . import _utils, lsp, uris
 
 log = logging.getLogger(__name__)
 
-DEFAULT_AUTO_IMPORT_MODULES = ["numpy"]
-
 # TODO: this is not the best e.g. we capture numbers
 RE_START_WORD = re.compile("[A-Za-z_0-9]*$")
 RE_END_WORD = re.compile("^[A-Za-z_0-9]*")
+
+
+def _defined_names(source: str) -> set:
+    """Return the set of names defined in the given source code."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set()
+
+    names: set = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            names.add(node.name)
+        elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            names.add(node.id)
+        elif isinstance(node, ast.alias):
+            names.add(node.asname or node.name.split(".")[0])
+    return names
 
 
 def lock(method):
@@ -51,9 +66,6 @@ class Workspace:
         self._root_uri_scheme = uris.urlparse(self._root_uri)[0]
         self._root_path = uris.to_fs_path(self._root_uri)
         self._docs = {}
-
-        # Cache jedi environments
-        self._environments = {}
 
         # Whilst incubating, keep rope private
         self.__rope = None
@@ -512,102 +524,6 @@ class Document:
 
         return m_start[0] + m_end[-1]
 
-    @lock
-    def jedi_names(self, all_scopes=False, definitions=True, references=False):
-        script = self.rope_script()
-        return script.get_names(
-            all_scopes=all_scopes, definitions=definitions, references=references
-        )
-
-    @lock
-    def rope_script(self, position=None, use_document_path=False):
-        extra_paths = []
-        environment_path = None
-        env_vars = None
-        prioritize_extra_paths = False
-
-        if self._config:
-            jedi_settings = self._config.plugin_settings(
-                "jedi", document_path=self.path
-            )
-            jedi.settings.auto_import_modules = jedi_settings.get(
-                "auto_import_modules", DEFAULT_AUTO_IMPORT_MODULES
-            )
-            environment_path = jedi_settings.get("environment")
-            # Jedi itself cannot deal with homedir-relative paths.
-            # On systems, where it is expected, expand the home directory.
-            if environment_path and os.name != "nt":
-                environment_path = os.path.expanduser(environment_path)
-
-            extra_paths = jedi_settings.get("extra_paths") or []
-            env_vars = jedi_settings.get("env_vars")
-            prioritize_extra_paths = jedi_settings.get("prioritize_extra_paths")
-
-        # Drop PYTHONPATH from env_vars before creating the environment to
-        # ensure that Jedi can startup properly without module name collision.
-        if env_vars is None:
-            env_vars = os.environ.copy()
-        env_vars.pop("PYTHONPATH", None)
-
-        environment = self.get_enviroment(environment_path, env_vars=env_vars)
-        sys_path = self.sys_path(
-            environment_path, env_vars, prioritize_extra_paths, extra_paths
-        )
-
-        project_path = self._workspace.root_path
-
-        # Extend sys_path with document's path if requested
-        if use_document_path:
-            sys_path += [os.path.normpath(os.path.dirname(self.path))]
-
-        kwargs = {
-            "code": self.source,
-            "path": self.path,
-            "environment": environment if environment_path else None,
-            "project": jedi.Project(path=project_path, sys_path=sys_path),
-        }
-
-        if position:
-            # Deprecated by Jedi to use in Script() constructor
-            kwargs.update(_utils.position_to_jedi_linecolumn(self, position))
-
-        return jedi.Script(**kwargs)
-
-    def get_enviroment(self, environment_path=None, env_vars=None):
-        # TODO(gatesn): #339 - make better use of jedi environments, they seem pretty powerful
-        if environment_path is None:
-            environment = jedi.api.environment.get_cached_default_environment()
-        else:
-            if environment_path in self._workspace._environments:
-                environment = self._workspace._environments[environment_path]
-            else:
-                environment = jedi.api.environment.create_environment(
-                    path=environment_path, safe=False, env_vars=env_vars
-                )
-                self._workspace._environments[environment_path] = environment
-
-        return environment
-
-    def sys_path(
-        self,
-        environment_path=None,
-        env_vars=None,
-        prioritize_extra_paths=False,
-        extra_paths=[],
-    ):
-        # Copy our extra sys path
-        path = list(self._extra_sys_path)
-        environment = self.get_enviroment(
-            environment_path=environment_path, env_vars=env_vars
-        )
-        path.extend(environment.get_sys_path())
-        if prioritize_extra_paths:
-            path = extra_paths + path
-        else:
-            path = path + extra_paths
-
-        return path
-
 
 class Notebook:
     """Represents a notebook."""
@@ -653,29 +569,23 @@ class Notebook:
         return cell_data
 
     @lock
-    def jedi_names(
-        self,
-        up_to_cell_uri: Optional[str] = None,
-        all_scopes=False,
-        definitions=True,
-        references=False,
-    ):
+    def collect_defined_names(self, up_to_cell_uri: Optional[str] = None):
         """
-        Get the names in the notebook up to a certain cell.
+        Get the names defined in the notebook up to a certain cell.
 
         Parameters
         ----------
         up_to_cell_uri: str, optional
             The cell uri to stop at. If None, all cells are considered.
         """
-        names = set()
+        names: set = set()
         for cell in self.cells:
             cell_uri = cell["document"]
             cell_document = self.workspace.get_cell_document(cell_uri)
-            names.update(cell_document.jedi_names(all_scopes, definitions, references))
+            names.update(_defined_names(cell_document.source))
             if cell_uri == up_to_cell_uri:
                 break
-        return {name.name for name in names}
+        return names
 
 
 class Cell(Document):

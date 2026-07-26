@@ -14,11 +14,8 @@ import time
 from typing import Optional
 
 import docstring_to_markdown
-import jedi
 
 from rols import IS_WIN
-
-JEDI_VERSION = jedi.__version__
 
 # Eol chars accepted by the LSP protocol
 # the ordering affects performance
@@ -378,23 +375,6 @@ def clip_column(column, lines, line_number):
         len(lines[line_number].rstrip("\r\n")) if len(lines) > line_number else 0
     )
     return min(column, max_column)
-
-
-def position_to_jedi_linecolumn(document, position):
-    """
-    Convert the LSP format 'line', 'character' to Jedi's 'line', 'column'
-
-    https://microsoft.github.io/language-server-protocol/specification#position
-    """
-    code_position = {}
-    if position:
-        code_position = {
-            "line": position["line"] + 1,
-            "column": clip_column(
-                position["character"], document.lines, position["line"]
-            ),
-        }
-    return code_position
 
 
 if os.name == "nt":
