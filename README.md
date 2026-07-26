@@ -2,11 +2,14 @@
 
 [![image](https://github.com/python-ls/python-ls/workflows/Linux%20tests/badge.svg)](https://github.com/python-ls/python-ls/actions?query=workflow%3A%22Linux+tests%22) [![image](https://github.com/python-ls/python-ls/workflows/Mac%20tests/badge.svg)](https://github.com/python-ls/python-ls/actions?query=workflow%3A%22Mac+tests%22) [![image](https://github.com/python-ls/python-ls/workflows/Windows%20tests/badge.svg)](https://github.com/python-ls/python-ls/actions?query=workflow%3A%22Windows+tests%22) [![image](https://img.shields.io/github/license/python-ls/python-ls.svg)](https://github.com/python-ls/python-ls/blob/master/LICENSE)
 
-A Python 3.9+ implementation of the [Language Server Protocol](https://github.com/Microsoft/language-server-protocol).
+A Python 3.11+ implementation of the [Language Server Protocol](https://github.com/Microsoft/language-server-protocol).
 
 ## Installation
 
-The base language server uses [Rope](https://github.com/python-rope/rope) to provide Completions and renaming, and [Jedi](https://github.com/davidhalter/jedi) to provide Definitions, Hover, References, Signature Help, and Symbols:
+The base language server uses
+[Rope](https://github.com/python-rope/rope) for most of its
+functinality: Completions, renaming, Definitions, Hover, References,
+Signature Help, and Symbols:
 
 ```
 pip install rope-language-server
@@ -41,40 +44,6 @@ If you get an error similar to `'install_requires' must be a string or list of s
 pip install -U setuptools
 ```
 
-### Windows and Linux installation
-
-If you use Anaconda/Miniconda, you can install `rope-language-server` using this conda command
-
-```
-conda install -c conda-forge rope-language-server
-```
-
-Python-lsp-server is available in the repos of every major Linux distribution, and it is usually called `rope-language-server` or `python3-rols`.
-
-For example, here is how to install it in Debian and Debian-based distributions (E.g. Ubuntu, Pop!_OS, Linux Mint)
-
-```
-sudo apt-get install python3-rols
-```
-
-or Fedora Linux
-
-```
-sudo dnf install python3-lsp-server
-```
-
-or Arch Linux
-
-```
-sudo pacman -S rope-language-server
-```
-
-Only on Alpine Linux the package is named differently. You can install it there by typing this command in your terminal:
-
-```
-apk add py3-lsp-server
-```
-
 ### 3rd Party Plugins
 
 Installing these plugins will add extra functionality to the language server:
@@ -83,7 +52,6 @@ Installing these plugins will add extra functionality to the language server:
 - [python-lsp-isort](https://github.com/chantera/python-lsp-isort): code formatting using [isort](https://github.com/PyCQA/isort) (automatic import sorting).
 - [python-lsp-black](https://github.com/python-lsp/python-lsp-black): code formatting using [Black](https://github.com/psf/black).
 - [pyls-memestra](https://github.com/QuantStack/pyls-memestra): detecting the use of deprecated APIs.
-- [rols-rope](https://github.com/python-rope/rols-rope): Extended refactoring capabilities using [Rope](https://github.com/python-rope/rope).
 - [python-lsp-ruff](https://github.com/python-lsp/python-lsp-ruff): Extensive and fast linting using [ruff](https://github.com/charliermarsh/ruff).
 
 Please see the above repositories for examples on how to write plugins for the Python LSP Server.
