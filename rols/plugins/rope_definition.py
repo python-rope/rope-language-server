@@ -1,36 +1,40 @@
 # Copyright 2017 Palantir Technologies, Inc.
+# Copyright 2024- Python Language Server Contributors.
 import logging
 
-from rols import hookimpl, uris
+from rope.contrib.findit import find_definition
+
+from rols import hookimpl
+from rols.plugins import _rope_utils
 
 log = logging.getLogger(__name__)
 
 
 @hookimpl
-def rols_definitions(config, document, position):
-    settings = config.plugin_settings("rope_definition")
-    definitions = document.rope_script(position).goto_assignments(
-        follow_imports=settings.get("follow_imports", True),
-        follow_builtin_imports=settings.get("follow_builtin_imports", True),
-    )
+def rols_definitions(config, workspace, document, position):
+    project = _rope_utils.get_project(config, workspace, document)
+    if project is None:
+        return []
 
+    resource = _rope_utils.get_resource(config, document)
+    offset = document.offset_at_position(position)
+
+    try:
+        location = find_definition(
+            project, document.source, offset, resource, maxfixes=3
+        )
+    except Exception as e:
+        log.debug("Failed to run Rope find_definition: %s", e)
+        return []
+
+    if location is None:
+        return []
+
+    source = _rope_utils.resource_source(location.resource, document)
+    start, end = location.region
     return [
         {
-            "uri": uris.uri_with(document.uri, path=d.module_path),
-            "range": {
-                "start": {"line": d.line - 1, "character": d.column},
-                "end": {"line": d.line - 1, "character": d.column + len(d.name)},
-            },
+            "uri": _rope_utils.resource_uri(location.resource, document),
+            "range": _rope_utils.region_to_range(source, start, end),
         }
-        for d in definitions
-        if d.is_definition() and _not_internal_definition(d)
     ]
-
-
-def _not_internal_definition(definition):
-    return (
-        definition.line is not None
-        and definition.column is not None
-        and definition.module_path is not None
-        and not definition.in_builtin_module()
-    )
