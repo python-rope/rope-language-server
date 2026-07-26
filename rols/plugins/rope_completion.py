@@ -9,11 +9,23 @@ from rols import _utils, hookimpl, lsp
 
 log = logging.getLogger(__name__)
 
+# Parameters that should never be offered as snippet tab-stops.
+_SKIP_PARAMS = ("self", "cls")
+
 
 @hookimpl
 def rols_settings():
-    # Default rope_completion to disabled
-    return {"plugins": {"rope_completion": {"enabled": False, "eager": False}}}
+    # rope_completion is the native completion provider and is enabled by
+    # default (replacing the legacy jedi-based completion).
+    return {
+        "plugins": {
+            "rope_completion": {
+                "enabled": True,
+                "eager": False,
+                "include_params": True,
+            }
+        }
+    }
 
 
 def _resolve_completion(completion, data, markup_kind):
@@ -46,21 +58,39 @@ def rols_completions(config, workspace, document, position):
 
     offset = document.offset_at_position(position)
     rope_config = config.settings(document_path=document.path).get("rope", {})
-    rope_project = workspace._rope_project_builder(rope_config)
-    document_rope = document._rope_resource(rope_config)
 
     completion_capabilities = config.capabilities.get("textDocument", {}).get(
         "completion", {}
     )
     item_capabilities = completion_capabilities.get("completionItem", {})
+    snippet_support = item_capabilities.get("snippetSupport")
     supported_markup_kinds = item_capabilities.get("documentationFormat", ["markdown"])
     preferred_markup_kind = _utils.choose_markup_kind(supported_markup_kinds)
+
+    should_include_params = settings.get("include_params", True)
+    include_params = snippet_support and should_include_params
+
+    try:
+        rope_project = workspace._rope_project_builder(rope_config)
+    except Exception as e:
+        log.debug("Failed to build Rope project: %s", e)
+        return []
+
+    try:
+        document_rope = document._rope_resource(rope_config)
+    except Exception:
+        # In-memory-only documents (e.g. notebook cells or transient temp
+        # documents) have no on-disk resource. Code assist can still complete
+        # from the source alone, so fall back to a resource-less request.
+        document_rope = None
 
     try:
         definitions = code_assist(
             rope_project, document.source, offset, document_rope, maxfixes=3
         )
     except Exception as e:
+        # Transient syntax errors can make code assist fail; degrade gracefully
+        # instead of aborting the completion hook.
         log.debug("Failed to run Rope code assist: %s", e)
         return []
 
@@ -73,6 +103,8 @@ def rols_completions(config, workspace, document, position):
             "sortText": _sort_text(d),
             "data": {"doc_uri": document.uri},
         }
+        if include_params:
+            item.update(_snippet(d))
         if resolve_eagerly:
             item = _resolve_completion(item, d, preferred_markup_kind)
         new_definitions.append(item)
@@ -109,6 +141,41 @@ def rols_completion_item_resolve(config, completion_item, document):
     return completion_item
 
 
+def _snippet(definition):
+    """Build a parameter snippet for callable Rope proposals.
+
+    Rope exposes the parameter names of functions and classes via the
+    ``parameters`` property. We turn those into an LSP snippet with a
+    tab-stop per parameter. Unlike Jedi, Rope does not tell us which
+    parameters have default values, so as a best-effort we only skip the
+    implicit ``self``/``cls`` parameters.
+    """
+    if definition.type not in ("function", "class"):
+        return {}
+
+    try:
+        parameters = definition.parameters
+    except Exception as e:
+        log.debug("Failed to get Rope parameters: %s", e)
+        parameters = None
+
+    if not parameters:
+        # Still emit an empty call with the cursor between the parentheses.
+        return {
+            "insertText": f"{definition.name}($0)",
+            "insertTextFormat": lsp.InsertTextFormat.Snippet,
+        }
+
+    params = [p for p in parameters if p not in _SKIP_PARAMS]
+    snippet = definition.name + "("
+    snippet += ", ".join(f"${{{i}:{param}}}" for i, param in enumerate(params, start=1))
+    snippet += ")$0"
+    return {
+        "insertText": snippet,
+        "insertTextFormat": lsp.InsertTextFormat.Snippet,
+    }
+
+
 def _sort_text(definition):
     """Ensure builtins appear at the bottom.
     Description is of format <type>: <module>.<item>
@@ -125,6 +192,10 @@ def _sort_text(definition):
 
 def _kind(d):
     """Return the LSP type"""
+    # Keywords carry a ``None`` type in Rope, so key off the scope instead.
+    if getattr(d, "scope", None) == "keyword":
+        return lsp.CompletionItemKind.Keyword
+
     MAP = {
         "none": lsp.CompletionItemKind.Value,
         "type": lsp.CompletionItemKind.Class,

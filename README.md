@@ -6,7 +6,7 @@ A Python 3.9+ implementation of the [Language Server Protocol](https://github.co
 
 ## Installation
 
-The base language server requires [Jedi](https://github.com/davidhalter/jedi) to provide Completions, Definitions, Hover, References, Signature Help, and Symbols:
+The base language server uses [Rope](https://github.com/python-rope/rope) to provide Completions and renaming, and [Jedi](https://github.com/davidhalter/jedi) to provide Definitions, Hover, References, Signature Help, and Symbols:
 
 ```
 pip install rope-language-server
@@ -14,7 +14,6 @@ pip install rope-language-server
 This will expose the command `rols` on your PATH. Confirm that installation succeeded by running `rols --help`.
 
 If the respective dependencies are found, the following optional providers will be enabled:
-- [Rope](https://github.com/python-rope/rope) for Completions and renaming
 - [Pyflakes](https://github.com/PyCQA/pyflakes) linter to detect various errors
 - [McCabe](https://github.com/PyCQA/mccabe) linter for complexity checking
 - [pycodestyle](https://github.com/PyCQA/pycodestyle) linter for style checking

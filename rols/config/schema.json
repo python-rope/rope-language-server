@@ -177,8 +177,8 @@
     },
     "rols.plugins.jedi_completion.enabled": {
       "type": "boolean",
-      "default": true,
-      "description": "Enable or disable the plugin."
+      "default": false,
+      "description": "Enable or disable the plugin. Disabled by default in favour of the native Rope completion (rope_completion)."
     },
     "rols.plugins.jedi_completion.include_params": {
       "type": "boolean",
@@ -487,8 +487,13 @@
     },
     "rols.plugins.rope_completion.enabled": {
       "type": "boolean",
-      "default": false,
-      "description": "Enable or disable the plugin."
+      "default": true,
+      "description": "Enable or disable the plugin. This is the native Rope-based completion provider, enabled by default."
+    },
+    "rols.plugins.rope_completion.include_params": {
+      "type": "boolean",
+      "default": true,
+      "description": "Auto-completes methods and classes with tabstops for each parameter."
     },
     "rols.plugins.rope_completion.eager": {
       "type": "boolean",

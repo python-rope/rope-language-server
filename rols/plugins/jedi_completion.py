@@ -11,6 +11,15 @@ from rols.plugins._resolvers import LABEL_RESOLVER, SNIPPET_RESOLVER
 
 log = logging.getLogger(__name__)
 
+
+@hookimpl
+def rols_settings():
+    # The legacy jedi-based completion is disabled by default in favour of
+    # the native Rope completion (see ``rope_completion``). Jedi support is
+    # slated for removal.
+    return {"plugins": {"jedi_completion": {"enabled": False}}}
+
+
 # Map to the LSP type
 # > Valid values for type are ``module``, `` class ``, ``instance``, ``function``,
 # > ``param``, ``path``, ``keyword``, ``property`` and ``statement``.

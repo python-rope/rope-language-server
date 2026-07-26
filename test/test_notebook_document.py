@@ -67,9 +67,7 @@ def test_workspace_did_change_configuration(client_server_pair) -> None:
     assert isinstance(server.workspace.get_document("notebook_uri"), Notebook)
     assert len(server.workspace.documents) == 2
 
-    server.workspace.update_config(
-        {"rols": {"plugins": {"flake8": {"enabled": True}}}}
-    )
+    server.workspace.update_config({"rols": {"plugins": {"flake8": {"enabled": True}}}})
 
     assert server.config.plugin_settings("flake8").get("enabled") is True
     assert (
@@ -523,8 +521,7 @@ def test_notebook_completion(client_server_pair) -> None:
         "items": [
             {
                 "data": {"doc_uri": "cell_2_uri"},
-                "insertText": "answer_to_life_universe_everything",
-                "kind": 6,
+                "kind": 18,
                 "label": "answer_to_life_universe_everything",
                 "sortText": "aanswer_to_life_universe_everything",
             },
@@ -570,9 +567,8 @@ def test_notebook_completion_resolve(client_server_pair) -> None:
         "items": [
             {
                 "data": {"doc_uri": "cell_2_uri"},
-                "insertText": "answer",
                 "kind": 3,
-                "label": "answer()",
+                "label": "answer",
                 "sortText": "aanswer",
             },
         ],
@@ -582,19 +578,18 @@ def test_notebook_completion_resolve(client_server_pair) -> None:
         "completionItem/resolve",
         {
             "data": {"doc_uri": "cell_2_uri"},
-            "label": "answer()",
+            "label": "answer",
         },
     )
     result = future.result(CALL_TIMEOUT_IN_SECONDS)
     del result["detail"]  # The value of this is unpredictable.
     assert result == {
         "data": {"doc_uri": "cell_2_uri"},
-        "insertText": "answer",
         "kind": 3,
-        "label": "answer()",
+        "label": "answer",
         "sortText": "aanswer",
         "documentation": {
             "kind": "markdown",
-            "value": "```python\nanswer()\n```\n\n\nReturns an important number.",
+            "value": "Returns an important number.",
         },
     }
