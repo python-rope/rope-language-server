@@ -16,7 +16,7 @@ from rols import _utils
 from rols.lsp import NotebookCellKind
 from rols.python_lsp import RopeLanguageServer, start_io_lang_server
 
-CALL_TIMEOUT_IN_SECONDS = 30
+CALL_TIMEOUT_IN_SECONDS = 120
 
 
 def send_notebook_did_open(client, cells: list[str]) -> None:
