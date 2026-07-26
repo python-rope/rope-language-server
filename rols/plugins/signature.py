@@ -1,10 +1,15 @@
 # Copyright 2017-2020 Palantir Technologies, Inc.
 # Copyright 2021- Python Language Server Contributors.
+# Copyright 2024- Python Language Server Contributors (Rope backend).
 
 import logging
 import re
 
+from rope.contrib import fixsyntax
+from rope.contrib.codeassist import get_calltip
+
 from rols import _utils, hookimpl
+from rols.plugins import _rope_utils
 
 log = logging.getLogger(__name__)
 
@@ -16,13 +21,46 @@ DOC_REGEX = [SPHINX, EPYDOC, GOOGLE]
 
 
 @hookimpl
-def rols_signature_help(config, document, position):
+def rols_signature_help(config, workspace, document, position):
     signature_config = config.settings().get("signature", {})
-    code_position = _utils.position_to_jedi_linecolumn(document, position)
-    signatures = document.rope_script().get_signatures(**code_position)
 
-    if not signatures:
+    project = _rope_utils.get_project(config, workspace, document)
+    if project is None:
         return {"signatures": []}
+
+    resource = _rope_utils.get_resource(project, document)
+    source = document.source
+    offset = document.offset_at_position(position)
+
+    # Rope wants the offset on the function being called, not inside (or after)
+    # the open parenthesis. Walk back to the opening paren of the current call.
+    function_offset = _find_call_offset(source, offset)
+    if function_offset is None:
+        return {"signatures": []}
+
+    try:
+        calltip = get_calltip(
+            project,
+            source,
+            function_offset,
+            resource,
+            maxfixes=3,
+            remove_self=True,
+        )
+    except Exception as e:
+        log.debug("Failed to get Rope calltip for signature help: %s", e)
+        return {"signatures": []}
+
+    if not calltip:
+        return {"signatures": []}
+
+    try:
+        fixer = fixsyntax.FixSyntax(project, source, resource, maxfixes=3)
+        pyname = fixer.pyname_at(function_offset)
+        docstring = pyname.get_object().get_doc() or "" if pyname else ""
+    except Exception as e:
+        log.debug("Failed to get Rope docstring for signature help: %s", e)
+        docstring = ""
 
     signature_capabilities = config.capabilities.get("textDocument", {}).get(
         "signatureHelp", {}
@@ -35,45 +73,93 @@ def rols_signature_help(config, document, position):
     )
     preferred_markup_kind = _utils.choose_markup_kind(supported_markup_kinds)
 
-    s = signatures[0]
+    param_names = _param_names(calltip)
 
-    docstring = s.docstring()
-
-    # Docstring contains one or more lines of signature, followed by empty line, followed by docstring
-    function_sig_lines = (docstring.split("\n\n") or [""])[0].splitlines()
-    function_sig = " ".join([line.strip() for line in function_sig_lines])
-
-    signature_docstring = s.docstring(raw=True)
+    signature_docstring = docstring
     if not signature_config.get("include_docstring", True):
         signature_docstring = ""
 
     sig = {
-        "label": function_sig,
+        "label": calltip,
         "documentation": _utils.format_docstring(
             signature_docstring, markup_kind=preferred_markup_kind
         ),
     }
 
-    # If there are params, add those
-    if s.params:
+    if param_names:
         sig["parameters"] = [
             {
-                "label": p.name,
+                "label": name,
                 "documentation": _utils.format_docstring(
-                    _param_docs(docstring, p.name), markup_kind=preferred_markup_kind
+                    _param_docs(docstring, name), markup_kind=preferred_markup_kind
                 ),
             }
-            for p in s.params
+            for name in param_names
         ]
 
     # We only return a single signature because Python doesn't allow overloading
     sig_info = {"signatures": [sig], "activeSignature": 0}
 
-    if s.index is not None and s.params:
-        # Then we know which parameter we're looking at
-        sig_info["activeParameter"] = s.index
+    active_parameter = _active_parameter(source, offset)
+    if param_names and active_parameter is not None:
+        sig_info["activeParameter"] = min(active_parameter, len(param_names) - 1)
 
     return sig_info
+
+
+def _find_call_offset(source, offset):
+    """Return an offset positioned on the function of the enclosing call.
+
+    Walks backwards from ``offset`` to find the opening parenthesis of the
+    current call expression, then points just before it (Rope expects the
+    offset to fall on the function name, not after its open paren).
+    """
+    depth = 0
+    i = offset - 1
+    while i >= 0:
+        char = source[i]
+        if char == ")":
+            depth += 1
+        elif char == "(":
+            if depth == 0:
+                return i - 1 if i > 0 else None
+            depth -= 1
+        i -= 1
+    return None
+
+
+def _active_parameter(source, offset):
+    """Count the comma-separated argument index at ``offset`` within a call."""
+    depth = 0
+    commas = 0
+    i = offset - 1
+    while i >= 0:
+        char = source[i]
+        if char in ")]}":
+            depth += 1
+        elif char in "([{":
+            if depth == 0:
+                return commas
+            depth -= 1
+        elif char == "," and depth == 0:
+            commas += 1
+        i -= 1
+    return None
+
+
+def _param_names(calltip):
+    """Extract parameter names from a Rope calltip string."""
+    start = calltip.find("(")
+    end = calltip.rfind(")")
+    if start == -1 or end == -1 or end <= start + 1:
+        return []
+    params = []
+    for part in calltip[start + 1 : end].split(","):
+        name = part.strip().split("=")[0].split(":")[0].strip()
+        name = name.lstrip("*")
+        if name:
+            params.append(name)
+    return params
 
 
 def _param_docs(docstring, param_name):
