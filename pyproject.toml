@@ -16,10 +16,9 @@ requires-python = ">=3.9"
 dependencies = [
     "docstring-to-markdown",
     "importlib_metadata>=4.8.3;python_version<\"3.10\"",
-    "parso",
+    "jedi>=0.17.2,<0.21.0",
     "pluggy>=1.0.0",
     "python-lsp-jsonrpc>=1.1.0,<2.0.0",
-    "rope>=1.11.0",
     "ujson>=3.0.0",
     "black"
 ]
@@ -68,10 +67,13 @@ test = [
 autopep8 = "rols.plugins.autopep8_format"
 folding = "rols.plugins.folding"
 flake8 = "rols.plugins.flake8_lint"
+jedi_completion = "rols.plugins.jedi_completion"
+jedi_definition = "rols.plugins.jedi_definition"
+jedi_type_definition = "rols.plugins.type_definition"
 jedi_hover = "rols.plugins.hover"
 jedi_highlight = "rols.plugins.highlight"
 jedi_references = "rols.plugins.references"
-jedi_rename = "rols.plugins.rope_rename"
+jedi_rename = "rols.plugins.jedi_rename"
 jedi_signature_help = "rols.plugins.signature"
 jedi_symbols = "rols.plugins.symbols"
 mccabe = "rols.plugins.mccabe_lint"
@@ -82,7 +84,6 @@ pyflakes = "rols.plugins.pyflakes_lint"
 pylint = "rols.plugins.pylint_lint"
 rope_completion = "rols.plugins.rope_completion"
 rope_autoimport = "rols.plugins.rope_autoimport"
-rope_definition = "rols.plugins.rope_definition"
 yapf = "rols.plugins.yapf_format"
 
 [project.scripts]
