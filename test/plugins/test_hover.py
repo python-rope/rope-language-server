@@ -38,24 +38,32 @@ def test_numpy_hover(workspace) -> None:
     doc = Document(DOC_URI, workspace, NUMPY_DOC)
 
     contents = ""
-    assert contents in rols_hover(doc._config, doc, no_hov_position)["contents"]
-
-    contents = "NumPy\n=====\n\nProvides\n"
     assert (
-        contents
-        in rols_hover(doc._config, doc, numpy_hov_position_1)["contents"]["value"]
+        contents in rols_hover(doc._config, workspace, doc, no_hov_position)["contents"]
     )
 
     contents = "NumPy\n=====\n\nProvides\n"
     assert (
         contents
-        in rols_hover(doc._config, doc, numpy_hov_position_2)["contents"]["value"]
+        in rols_hover(doc._config, workspace, doc, numpy_hov_position_1)["contents"][
+            "value"
+        ]
     )
 
     contents = "NumPy\n=====\n\nProvides\n"
     assert (
         contents
-        in rols_hover(doc._config, doc, numpy_hov_position_3)["contents"]["value"]
+        in rols_hover(doc._config, workspace, doc, numpy_hov_position_2)["contents"][
+            "value"
+        ]
+    )
+
+    contents = "NumPy\n=====\n\nProvides\n"
+    assert (
+        contents
+        in rols_hover(doc._config, workspace, doc, numpy_hov_position_3)["contents"][
+            "value"
+        ]
     )
 
     # https://github.com/davidhalter/jedi/issues/1746
@@ -65,9 +73,9 @@ def test_numpy_hover(workspace) -> None:
         contents = "Trigonometric sine, element-wise.\n\n"
         assert (
             contents
-            in rols_hover(doc._config, doc, numpy_sin_hov_position)["contents"][
-                "value"
-            ]
+            in rols_hover(doc._config, workspace, doc, numpy_sin_hov_position)[
+                "contents"
+            ]["value"]
         )
 
 
@@ -81,12 +89,14 @@ def test_hover(workspace) -> None:
 
     contents = {
         "kind": "markdown",
-        "value": "```python\nmain(a: float, b: float)\n```\n\n\nhello world",
+        "value": "```python\nmain(a, b)\n```\n\n\nhello world",
     }
 
-    assert {"contents": contents} == rols_hover(doc._config, doc, hov_position)
+    assert {"contents": contents} == rols_hover(
+        doc._config, workspace, doc, hov_position
+    )
 
-    assert {"contents": ""} == rols_hover(doc._config, doc, no_hov_position)
+    assert {"contents": ""} == rols_hover(doc._config, workspace, doc, no_hov_position)
 
 
 def test_hover_signature_formatting(workspace) -> None:
@@ -99,10 +109,12 @@ def test_hover_signature_formatting(workspace) -> None:
 
     contents = {
         "kind": "markdown",
-        "value": "```python\nmain(\n    a: float,\n    b: float,\n)\n```\n\n\nhello world",
+        "value": "```python\nmain(\n    a, b\n)\n```\n\n\nhello world",
     }
 
-    assert {"contents": contents} == rols_hover(doc._config, doc, hov_position)
+    assert {"contents": contents} == rols_hover(
+        doc._config, workspace, doc, hov_position
+    )
 
 
 def test_hover_signature_formatting_opt_out(workspace) -> None:
@@ -114,33 +126,38 @@ def test_hover_signature_formatting_opt_out(workspace) -> None:
 
     contents = {
         "kind": "markdown",
-        "value": "```python\nmain(a: float, b: float)\n```\n\n\nhello world",
+        "value": "```python\nmain(a, b)\n```\n\n\nhello world",
     }
 
-    assert {"contents": contents} == rols_hover(doc._config, doc, hov_position)
+    assert {"contents": contents} == rols_hover(
+        doc._config, workspace, doc, hov_position
+    )
 
 
-def test_document_path_hover(workspace_other_root_path, tmpdir) -> None:
-    # Create a dummy module out of the workspace's root_path and try to get
-    # a definition on it in another file placed next to it.
+def test_document_path_hover(workspace_other_root_path) -> None:
+    # Create a dummy module inside the workspace's root_path and get a hover
+    # for a symbol imported from it in another file in the same project.
     module_content = '''
 def foo():
     """A docstring for foo."""
     pass
 '''
 
-    p = tmpdir.join("mymodule.py")
-    p.write(module_content)
+    root = workspace_other_root_path.root_path
+    with open(os.path.join(root, "mymodule.py"), "w") as f:
+        f.write(module_content)
 
-    # Content of doc to test definition
+    # Content of doc to test hover
     doc_content = """from mymodule import foo
 foo"""
-    doc_path = str(tmpdir) + os.path.sep + "myfile.py"
+    doc_path = os.path.join(root, "myfile.py")
     doc_uri = uris.from_fs_path(doc_path)
     doc = Document(doc_uri, workspace_other_root_path, doc_content)
 
     cursor_pos = {"line": 1, "character": 3}
-    contents = rols_hover(doc._config, doc, cursor_pos)["contents"]
+    contents = rols_hover(doc._config, workspace_other_root_path, doc, cursor_pos)[
+        "contents"
+    ]
 
     assert "A docstring for foo." in contents["value"]
 
@@ -153,7 +170,9 @@ def test_hover_without_docstring(workspace_with_signature_docstring_disabled) ->
 
     contents = {
         "kind": "markdown",
-        "value": "```python\nmain(a: float, b: float)\n```\n",
+        "value": "```python\nmain(a, b)\n```\n",
     }
 
-    assert {"contents": contents} == rols_hover(doc._config, doc, hov_position)
+    assert {"contents": contents} == rols_hover(
+        doc._config, workspace_with_signature_docstring_disabled, doc, hov_position
+    )

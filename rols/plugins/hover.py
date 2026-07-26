@@ -1,55 +1,67 @@
 # Copyright 2017-2020 Palantir Technologies, Inc.
 # Copyright 2021- Python Language Server Contributors.
+# Copyright 2024- Python Language Server Contributors (Rope backend).
 
 import logging
 
+from rope.contrib import fixsyntax
+from rope.contrib.codeassist import get_calltip
+
 from rols import _utils, hookimpl
+from rols.plugins import _rope_utils
 
 log = logging.getLogger(__name__)
 
 
 @hookimpl
-def rols_hover(config, document, position):
+def rols_hover(config, workspace, document, position):
     signature_config = config.settings().get("signature", {})
-    code_position = _utils.position_to_jedi_linecolumn(document, position)
-    definitions = document.rope_script(use_document_path=True).infer(**code_position)
-    word = document.word_at_position(position)
 
-    # Find first exact matching definition
-    definition = next((x for x in definitions if x.name == word), None)
-
-    # Ensure a definition is used if only one is available
-    # even if the word doesn't match. An example of this case is 'np'
-    # where 'numpy' doesn't match with 'np'. Same for NumPy ufuncs
-    if len(definitions) == 1:
-        definition = definitions[0]
-
-    if not definition:
+    project = _rope_utils.get_project(config, workspace, document)
+    if project is None:
         return {"contents": ""}
+
+    resource = _rope_utils.get_resource(config, document)
+    offset = document.offset_at_position(position)
+
+    try:
+        fixer = fixsyntax.FixSyntax(project, document.source, resource, maxfixes=3)
+        pyname = fixer.pyname_at(offset)
+    except Exception as e:
+        log.debug("Failed to resolve Rope name for hover: %s", e)
+        return {"contents": ""}
+
+    if pyname is None:
+        return {"contents": ""}
+
+    try:
+        pyobject = pyname.get_object()
+        docstring = pyobject.get_doc() or ""
+    except Exception as e:
+        log.debug("Failed to get Rope docstring for hover: %s", e)
+        docstring = ""
+
+    try:
+        signature = get_calltip(
+            project, document.source, offset, resource, maxfixes=3, remove_self=True
+        )
+    except Exception as e:
+        log.debug("Failed to get Rope calltip for hover: %s", e)
+        signature = None
 
     hover_capabilities = config.capabilities.get("textDocument", {}).get("hover", {})
     supported_markup_kinds = hover_capabilities.get("contentFormat", ["markdown"])
     preferred_markup_kind = _utils.choose_markup_kind(supported_markup_kinds)
 
-    # Find first exact matching signature
-    signature = next(
-        (
-            x.to_string()
-            for x in definition.get_signatures()
-            if (x.name == word and x.type not in ["module"])
-        ),
-        "",
-    )
-
     include_docstring = signature_config.get("include_docstring", True)
-
-    # raw docstring returns only doc, without signature
-    docstring = definition.docstring(raw=True)
     if not include_docstring:
         if signature:
             docstring = ""
         else:
             docstring = docstring.strip().split("\n")[0].strip()
+
+    if not signature and not docstring:
+        return {"contents": ""}
 
     return {
         "contents": _utils.format_docstring(
