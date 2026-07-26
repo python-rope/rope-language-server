@@ -49,6 +49,7 @@ def debounce(interval_s, keyed_by=None):
                     old_timer.cancel()
 
                 timer = threading.Timer(interval_s, run)
+                timer.daemon = True
                 timers[key] = timer
                 timer.start()
 
