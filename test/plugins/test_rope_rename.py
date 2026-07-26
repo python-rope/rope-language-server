@@ -6,7 +6,7 @@ import os
 import pytest
 
 from rols import uris
-from rols.plugins.jedi_rename import rols_rename
+from rols.plugins.rope_rename import rols_rename
 from rols.workspace import Document
 
 DOC_NAME = "test1.py"
