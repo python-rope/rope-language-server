@@ -87,9 +87,11 @@ class PyCodeStyleDiagnosticReport(pycodestyle.BaseReport):
             "end": {
                 # FIXME: It's a little naiive to mark until the end of the line, can we not easily do better?
                 "line": line_number - 1,
-                "character": 100
-                if line_number > len(self.lines)
-                else len(self.lines[line_number - 1]),
+                "character": (
+                    100
+                    if line_number > len(self.lines)
+                    else len(self.lines[line_number - 1])
+                ),
             },
         }
         diagnostic = {

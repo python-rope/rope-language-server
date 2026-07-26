@@ -310,9 +310,9 @@ def test_progress_simple(workspace, consumer) -> None:
     assert init_call[0][0]["method"] == "window/workDoneProgress/create"
 
     # same method for all calls
-    assert all(call[0][0]["method"] == "$/progress" for call in progress_calls), (
-        consumer.call_args_list
-    )
+    assert all(
+        call[0][0]["method"] == "$/progress" for call in progress_calls
+    ), consumer.call_args_list
 
     # same token used in all calls
     assert (
