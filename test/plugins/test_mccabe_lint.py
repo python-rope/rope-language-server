@@ -1,9 +1,9 @@
 # Copyright 2017-2020 Palantir Technologies, Inc.
 # Copyright 2021- Python Language Server Contributors.
 
-from pylsp import lsp, uris
-from pylsp.plugins import mccabe_lint
-from pylsp.workspace import Document
+from rols import lsp, uris
+from rols.plugins import mccabe_lint
+from rols.workspace import Document
 
 DOC_URI = uris.from_fs_path(__file__)
 DOC = """def hello():
@@ -19,7 +19,7 @@ def test_mccabe(config, workspace) -> None:
     try:
         config.update({"plugins": {"mccabe": {"threshold": 1}}})
         doc = Document(DOC_URI, workspace, DOC)
-        diags = mccabe_lint.pylsp_lint(config, workspace, doc)
+        diags = mccabe_lint.rols_lint(config, workspace, doc)
 
         assert all(d["source"] == "mccabe" for d in diags)
 
@@ -36,4 +36,4 @@ def test_mccabe(config, workspace) -> None:
 
 def test_mccabe_syntax_error(config, workspace) -> None:
     doc = Document(DOC_URI, workspace, DOC_SYNTAX_ERR)
-    assert mccabe_lint.pylsp_lint(config, workspace, doc) is None
+    assert mccabe_lint.rols_lint(config, workspace, doc) is None

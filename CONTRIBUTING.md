@@ -9,7 +9,7 @@
 
 ## Trying out if it works
 
-Go to file `pylsp/python_lsp.py`, function `start_io_lang_server`,
+Go to file `rols/python_lsp.py`, function `start_io_lang_server`,
 and on the first line of the function, add some logging:
 
 ```py
@@ -19,7 +19,7 @@ log.info("It works!")
 Save the file, restart the LSP server and you should see the log line:
 
 ```
-2023-10-12 16:46:38,320 CEST - INFO - pylsp._utils - It works!
+2023-10-12 16:46:38,320 CEST - INFO - rols._utils - It works!
 ```
 
 Now the project is setup in a way you can quickly iterate change you want to add.

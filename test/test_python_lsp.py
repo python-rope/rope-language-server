@@ -23,7 +23,7 @@ def ws_server_subprocess():
     cmd = [
         sys.executable,
         "-m",
-        "pylsp.__main__",
+        "rols.__main__",
         "--ws",
         "--host",
         HOST,

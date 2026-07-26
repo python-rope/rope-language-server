@@ -4,7 +4,7 @@ import pathlib
 
 import pytest
 
-from pylsp import uris
+from rols import uris
 
 DOC_URI = uris.from_fs_path(__file__)
 NOTEBOOK_URI = uris.from_fs_path("notebook_uri")
@@ -14,51 +14,51 @@ def path_as_uri(path):
     return pathlib.Path(os.path.abspath(path)).as_uri()
 
 
-def test_local(pylsp) -> None:
+def test_local(rols) -> None:
     """Since the workspace points to the test directory"""
-    assert pylsp.workspace.is_local()
+    assert rols.workspace.is_local()
 
 
-def test_put_document(pylsp) -> None:
-    pylsp.workspace.put_document(DOC_URI, "content")
-    assert DOC_URI in pylsp.workspace._docs
+def test_put_document(rols) -> None:
+    rols.workspace.put_document(DOC_URI, "content")
+    assert DOC_URI in rols.workspace._docs
 
 
-def test_put_notebook_document(pylsp) -> None:
-    pylsp.workspace.put_notebook_document(DOC_URI, "jupyter-notebook", [])
-    assert DOC_URI in pylsp.workspace._docs
+def test_put_notebook_document(rols) -> None:
+    rols.workspace.put_notebook_document(DOC_URI, "jupyter-notebook", [])
+    assert DOC_URI in rols.workspace._docs
 
 
-def test_put_cell_document(pylsp) -> None:
-    pylsp.workspace.put_cell_document(DOC_URI, NOTEBOOK_URI, "python", "content")
-    assert DOC_URI in pylsp.workspace._docs
+def test_put_cell_document(rols) -> None:
+    rols.workspace.put_cell_document(DOC_URI, NOTEBOOK_URI, "python", "content")
+    assert DOC_URI in rols.workspace._docs
 
 
-def test_get_document(pylsp) -> None:
-    pylsp.workspace.put_document(DOC_URI, "TEXT")
-    assert pylsp.workspace.get_document(DOC_URI).source == "TEXT"
+def test_get_document(rols) -> None:
+    rols.workspace.put_document(DOC_URI, "TEXT")
+    assert rols.workspace.get_document(DOC_URI).source == "TEXT"
 
 
-def test_get_missing_document(tmpdir, pylsp) -> None:
+def test_get_missing_document(tmpdir, rols) -> None:
     source = "TEXT"
     doc_path = tmpdir.join("test_document.py")
     doc_path.write(source)
     doc_uri = uris.from_fs_path(str(doc_path))
-    assert pylsp.workspace.get_document(doc_uri).source == "TEXT"
+    assert rols.workspace.get_document(doc_uri).source == "TEXT"
 
 
-def test_rm_document(pylsp) -> None:
-    pylsp.workspace.put_document(DOC_URI, "TEXT")
-    assert pylsp.workspace.get_document(DOC_URI).source == "TEXT"
-    pylsp.workspace.rm_document(DOC_URI)
-    assert pylsp.workspace.get_document(DOC_URI)._source is None
+def test_rm_document(rols) -> None:
+    rols.workspace.put_document(DOC_URI, "TEXT")
+    assert rols.workspace.get_document(DOC_URI).source == "TEXT"
+    rols.workspace.rm_document(DOC_URI)
+    assert rols.workspace.get_document(DOC_URI)._source is None
 
 
 @pytest.mark.parametrize(
     "metafiles", [("setup.py",), ("pyproject.toml",), ("setup.py", "pyproject.toml")]
 )
-def test_non_root_project(pylsp, metafiles) -> None:
-    repo_root = os.path.join(pylsp.workspace.root_path, "repo-root")
+def test_non_root_project(rols, metafiles) -> None:
+    repo_root = os.path.join(rols.workspace.root_path, "repo-root")
     os.mkdir(repo_root)
     project_root = os.path.join(repo_root, "project-root")
     os.mkdir(project_root)
@@ -68,52 +68,52 @@ def test_non_root_project(pylsp, metafiles) -> None:
             f.write("# " + metafile)
 
     test_uri = uris.from_fs_path(os.path.join(project_root, "hello/test.py"))
-    pylsp.workspace.put_document(test_uri, "assert True")
-    test_doc = pylsp.workspace.get_document(test_uri)
+    rols.workspace.put_document(test_uri, "assert True")
+    test_doc = rols.workspace.get_document(test_uri)
     assert project_root in test_doc.sys_path()
 
 
-def test_root_project_with_no_setup_py(pylsp) -> None:
+def test_root_project_with_no_setup_py(rols) -> None:
     """Default to workspace root."""
-    workspace_root = pylsp.workspace.root_path
+    workspace_root = rols.workspace.root_path
     test_uri = uris.from_fs_path(os.path.join(workspace_root, "hello/test.py"))
-    pylsp.workspace.put_document(test_uri, "assert True")
-    test_doc = pylsp.workspace.get_document(test_uri)
+    rols.workspace.put_document(test_uri, "assert True")
+    test_doc = rols.workspace.get_document(test_uri)
     assert workspace_root in test_doc.sys_path()
 
 
-def test_multiple_workspaces_from_initialize(pylsp_w_workspace_folders) -> None:
-    pylsp, workspace_folders = pylsp_w_workspace_folders
+def test_multiple_workspaces_from_initialize(rols_w_workspace_folders) -> None:
+    rols, workspace_folders = rols_w_workspace_folders
 
-    assert len(pylsp.workspaces) == 2
+    assert len(rols.workspaces) == 2
 
     folders_uris = [uris.from_fs_path(str(folder)) for folder in workspace_folders]
 
     for folder_uri in folders_uris:
-        assert folder_uri in pylsp.workspaces
+        assert folder_uri in rols.workspaces
 
-    assert folders_uris[0] == pylsp.root_uri
+    assert folders_uris[0] == rols.root_uri
 
     # Create file in the first workspace folder.
     file1 = workspace_folders[0].join("file1.py")
     file1.write("import os")
     msg1 = {"uri": path_as_uri(str(file1)), "version": 1, "text": "import os"}
 
-    pylsp.m_text_document__did_open(textDocument=msg1)
-    assert msg1["uri"] in pylsp.workspace._docs
-    assert msg1["uri"] in pylsp.workspaces[folders_uris[0]]._docs
+    rols.m_text_document__did_open(textDocument=msg1)
+    assert msg1["uri"] in rols.workspace._docs
+    assert msg1["uri"] in rols.workspaces[folders_uris[0]]._docs
 
     # Create file in the second workspace folder.
     file2 = workspace_folders[1].join("file2.py")
     file2.write("import sys")
     msg2 = {"uri": path_as_uri(str(file2)), "version": 1, "text": "import sys"}
 
-    pylsp.m_text_document__did_open(textDocument=msg2)
-    assert msg2["uri"] not in pylsp.workspace._docs
-    assert msg2["uri"] in pylsp.workspaces[folders_uris[1]]._docs
+    rols.m_text_document__did_open(textDocument=msg2)
+    assert msg2["uri"] not in rols.workspace._docs
+    assert msg2["uri"] in rols.workspaces[folders_uris[1]]._docs
 
 
-def test_multiple_workspaces(tmpdir, pylsp) -> None:
+def test_multiple_workspaces(tmpdir, rols) -> None:
     workspace1_dir = tmpdir.mkdir("workspace1")
     workspace2_dir = tmpdir.mkdir("workspace2")
     file1 = workspace1_dir.join("file1.py")
@@ -123,117 +123,117 @@ def test_multiple_workspaces(tmpdir, pylsp) -> None:
 
     msg = {"uri": path_as_uri(str(file1)), "version": 1, "text": "import os"}
 
-    pylsp.m_text_document__did_open(textDocument=msg)
-    assert msg["uri"] in pylsp.workspace._docs
+    rols.m_text_document__did_open(textDocument=msg)
+    assert msg["uri"] in rols.workspace._docs
 
     added_workspaces = [
         {"uri": path_as_uri(str(x))} for x in (workspace1_dir, workspace2_dir)
     ]
     event = {"added": added_workspaces, "removed": []}
-    pylsp.m_workspace__did_change_workspace_folders(event)
+    rols.m_workspace__did_change_workspace_folders(event)
 
     for workspace in added_workspaces:
-        assert workspace["uri"] in pylsp.workspaces
+        assert workspace["uri"] in rols.workspaces
 
     workspace1_uri = added_workspaces[0]["uri"]
-    assert msg["uri"] not in pylsp.workspace._docs
-    assert msg["uri"] in pylsp.workspaces[workspace1_uri]._docs
+    assert msg["uri"] not in rols.workspace._docs
+    assert msg["uri"] in rols.workspaces[workspace1_uri]._docs
 
     msg = {"uri": path_as_uri(str(file2)), "version": 1, "text": "import sys"}
-    pylsp.m_text_document__did_open(textDocument=msg)
+    rols.m_text_document__did_open(textDocument=msg)
 
     workspace2_uri = added_workspaces[1]["uri"]
-    assert msg["uri"] in pylsp.workspaces[workspace2_uri]._docs
+    assert msg["uri"] in rols.workspaces[workspace2_uri]._docs
 
     event = {"added": [], "removed": [added_workspaces[0]]}
-    pylsp.m_workspace__did_change_workspace_folders(event)
-    assert workspace1_uri not in pylsp.workspaces
+    rols.m_workspace__did_change_workspace_folders(event)
+    assert workspace1_uri not in rols.workspaces
 
 
-def test_multiple_workspaces_wrong_removed_uri(pylsp, tmpdir) -> None:
+def test_multiple_workspaces_wrong_removed_uri(rols, tmpdir) -> None:
     workspace = {"uri": str(tmpdir.mkdir("Test123"))}
     event = {"added": [], "removed": [workspace]}
-    pylsp.m_workspace__did_change_workspace_folders(event)
-    assert workspace["uri"] not in pylsp.workspaces
+    rols.m_workspace__did_change_workspace_folders(event)
+    assert workspace["uri"] not in rols.workspaces
 
 
-def test_root_workspace_changed(pylsp, tmpdir) -> None:
+def test_root_workspace_changed(rols, tmpdir) -> None:
     test_uri = str(tmpdir.mkdir("Test123"))
-    pylsp.root_uri = test_uri
-    pylsp.workspace._root_uri = test_uri
+    rols.root_uri = test_uri
+    rols.workspace._root_uri = test_uri
 
     workspace1 = {"uri": test_uri}
     workspace2 = {"uri": str(tmpdir.mkdir("NewTest456"))}
 
     event = {"added": [workspace2], "removed": [workspace1]}
-    pylsp.m_workspace__did_change_workspace_folders(event)
+    rols.m_workspace__did_change_workspace_folders(event)
 
-    assert workspace2["uri"] == pylsp.workspace._root_uri
-    assert workspace2["uri"] == pylsp.root_uri
+    assert workspace2["uri"] == rols.workspace._root_uri
+    assert workspace2["uri"] == rols.root_uri
 
 
-def test_root_workspace_not_changed(pylsp, tmpdir) -> None:
+def test_root_workspace_not_changed(rols, tmpdir) -> None:
     # removed uri != root_uri
     test_uri_1 = str(tmpdir.mkdir("Test12"))
-    pylsp.root_uri = test_uri_1
-    pylsp.workspace._root_uri = test_uri_1
+    rols.root_uri = test_uri_1
+    rols.workspace._root_uri = test_uri_1
     workspace1 = {"uri": str(tmpdir.mkdir("Test1234"))}
     workspace2 = {"uri": str(tmpdir.mkdir("NewTest456"))}
     event = {"added": [workspace2], "removed": [workspace1]}
-    pylsp.m_workspace__did_change_workspace_folders(event)
-    assert test_uri_1 == pylsp.workspace._root_uri
-    assert test_uri_1 == pylsp.root_uri
+    rols.m_workspace__did_change_workspace_folders(event)
+    assert test_uri_1 == rols.workspace._root_uri
+    assert test_uri_1 == rols.root_uri
     # empty 'added' list
     test_uri_2 = str(tmpdir.mkdir("Test123"))
     new_root_uri = workspace2["uri"]
-    pylsp.root_uri = test_uri_2
-    pylsp.workspace._root_uri = test_uri_2
+    rols.root_uri = test_uri_2
+    rols.workspace._root_uri = test_uri_2
     workspace1 = {"uri": test_uri_2}
     event = {"added": [], "removed": [workspace1]}
-    pylsp.m_workspace__did_change_workspace_folders(event)
-    assert new_root_uri == pylsp.workspace._root_uri
-    assert new_root_uri == pylsp.root_uri
+    rols.m_workspace__did_change_workspace_folders(event)
+    assert new_root_uri == rols.workspace._root_uri
+    assert new_root_uri == rols.root_uri
     # empty 'removed' list
     event = {"added": [workspace1], "removed": []}
-    pylsp.m_workspace__did_change_workspace_folders(event)
-    assert new_root_uri == pylsp.workspace._root_uri
-    assert new_root_uri == pylsp.root_uri
+    rols.m_workspace__did_change_workspace_folders(event)
+    assert new_root_uri == rols.workspace._root_uri
+    assert new_root_uri == rols.root_uri
     # 'added' list has no 'uri'
     workspace2 = {"TESTuri": "Test1234"}
     event = {"added": [workspace2], "removed": [workspace1]}
-    pylsp.m_workspace__did_change_workspace_folders(event)
-    assert new_root_uri == pylsp.workspace._root_uri
-    assert new_root_uri == pylsp.root_uri
+    rols.m_workspace__did_change_workspace_folders(event)
+    assert new_root_uri == rols.workspace._root_uri
+    assert new_root_uri == rols.root_uri
 
 
-def test_root_workspace_removed(tmpdir, pylsp) -> None:
+def test_root_workspace_removed(tmpdir, rols) -> None:
     workspace1_dir = tmpdir.mkdir("workspace1")
     workspace2_dir = tmpdir.mkdir("workspace2")
-    root_uri = pylsp.root_uri
+    root_uri = rols.root_uri
 
-    # Add workspaces to the pylsp
+    # Add workspaces to the rols
     added_workspaces = [
         {"uri": path_as_uri(str(x))} for x in (workspace1_dir, workspace2_dir)
     ]
     event = {"added": added_workspaces, "removed": []}
-    pylsp.m_workspace__did_change_workspace_folders(event)
+    rols.m_workspace__did_change_workspace_folders(event)
 
     # Remove the root workspace
     removed_workspaces = [{"uri": root_uri}]
     event = {"added": [], "removed": removed_workspaces}
-    pylsp.m_workspace__did_change_workspace_folders(event)
+    rols.m_workspace__did_change_workspace_folders(event)
 
     # Assert that the first of the workspaces (in alphabetical order) is now
     # the root workspace
-    assert pylsp.root_uri == path_as_uri(str(workspace1_dir))
-    assert pylsp.workspace._root_uri == path_as_uri(str(workspace1_dir))
+    assert rols.root_uri == path_as_uri(str(workspace1_dir))
+    assert rols.workspace._root_uri == path_as_uri(str(workspace1_dir))
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Fails on Windows")
-def test_workspace_loads_pycodestyle_config(pylsp, tmpdir) -> None:
+def test_workspace_loads_pycodestyle_config(rols, tmpdir) -> None:
     workspace1_dir = tmpdir.mkdir("Test123")
-    pylsp.root_uri = str(workspace1_dir)
-    pylsp.workspace._root_uri = str(workspace1_dir)
+    rols.root_uri = str(workspace1_dir)
+    rols.workspace._root_uri = str(workspace1_dir)
 
     # Test that project settings are loaded
     workspace2_dir = tmpdir.mkdir("NewTest456")
@@ -244,14 +244,14 @@ def test_workspace_loads_pycodestyle_config(pylsp, tmpdir) -> None:
     workspace2 = {"uri": str(workspace2_dir)}
 
     event = {"added": [workspace2], "removed": [workspace1]}
-    pylsp.m_workspace__did_change_workspace_folders(event)
+    rols.m_workspace__did_change_workspace_folders(event)
 
-    seetings = pylsp.workspaces[str(workspace2_dir)]._config.settings()
+    seetings = rols.workspaces[str(workspace2_dir)]._config.settings()
     assert seetings["plugins"]["pycodestyle"]["maxLineLength"] == 1000
 
     # Test that project settings prevail over server ones.
-    server_settings = {"pylsp": {"plugins": {"pycodestyle": {"maxLineLength": 10}}}}
-    pylsp.m_workspace__did_change_configuration(server_settings)
+    server_settings = {"rols": {"plugins": {"pycodestyle": {"maxLineLength": 10}}}}
+    rols.m_workspace__did_change_configuration(server_settings)
     assert seetings["plugins"]["pycodestyle"]["maxLineLength"] == 1000
 
     # Test switching to another workspace with different settings
@@ -262,32 +262,32 @@ def test_workspace_loads_pycodestyle_config(pylsp, tmpdir) -> None:
     workspace3 = {"uri": str(workspace3_dir)}
 
     event = {"added": [workspace3], "removed": [workspace2]}
-    pylsp.m_workspace__did_change_workspace_folders(event)
+    rols.m_workspace__did_change_workspace_folders(event)
 
-    seetings = pylsp.workspaces[str(workspace3_dir)]._config.settings()
+    seetings = rols.workspaces[str(workspace3_dir)]._config.settings()
     assert seetings["plugins"]["pycodestyle"]["maxLineLength"] == 20
 
 
-def test_settings_of_added_workspace(pylsp, tmpdir) -> None:
+def test_settings_of_added_workspace(rols, tmpdir) -> None:
     test_uri = str(tmpdir.mkdir("Test123"))
-    pylsp.root_uri = test_uri
-    pylsp.workspace._root_uri = test_uri
+    rols.root_uri = test_uri
+    rols.workspace._root_uri = test_uri
 
     # Set some settings for the server.
     server_settings = {
-        "pylsp": {"plugins": {"jedi": {"environment": "/usr/bin/python3"}}}
+        "rols": {"plugins": {"jedi": {"environment": "/usr/bin/python3"}}}
     }
-    pylsp.m_workspace__did_change_configuration(server_settings)
+    rols.m_workspace__did_change_configuration(server_settings)
 
     # Create a new workspace.
     workspace1 = {"uri": str(tmpdir.mkdir("NewTest456"))}
     event = {"added": [workspace1]}
-    pylsp.m_workspace__did_change_workspace_folders(event)
+    rols.m_workspace__did_change_workspace_folders(event)
 
     # Assert settings are inherited from the server config.
-    workspace1_object = pylsp.workspaces[workspace1["uri"]]
+    workspace1_object = rols.workspaces[workspace1["uri"]]
     workspace1_jedi_settings = workspace1_object._config.plugin_settings("jedi")
-    assert workspace1_jedi_settings == server_settings["pylsp"]["plugins"]["jedi"]
+    assert workspace1_jedi_settings == server_settings["rols"]["plugins"]["jedi"]
 
 
 def test_no_progress_without_capability(workspace, consumer) -> None:

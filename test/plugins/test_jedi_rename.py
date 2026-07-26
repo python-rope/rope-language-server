@@ -5,9 +5,9 @@ import os
 
 import pytest
 
-from pylsp import uris
-from pylsp.plugins.jedi_rename import pylsp_rename
-from pylsp.workspace import Document
+from rols import uris
+from rols.plugins.jedi_rename import rols_rename
+from rols.workspace import Document
 
 DOC_NAME = "test1.py"
 DOC = """class Test1():
@@ -39,7 +39,7 @@ def test_jedi_rename(tmp_workspace, config) -> None:
     DOC_URI = uris.from_fs_path(os.path.join(tmp_workspace.root_path, DOC_NAME))
     doc = Document(DOC_URI, tmp_workspace)
 
-    result = pylsp_rename(config, tmp_workspace, doc, position, "ShouldBeRenamed")
+    result = rols_rename(config, tmp_workspace, doc, position, "ShouldBeRenamed")
     assert len(result.keys()) == 1
 
     changes = result.get("documentChanges")
@@ -80,13 +80,13 @@ def test_jedi_rename(tmp_workspace, config) -> None:
         }
     ]
 
-    # Regression test for issue python-lsp/python-lsp-server#413
+    # Regression test for issue python-lsp/rope-language-server#413
     # rename foo
     position = {"line": 0, "character": 0}
     DOC_URI = uris.from_fs_path(os.path.join(tmp_workspace.root_path, DOC_NAME_SIMPLE))
     doc = Document(DOC_URI, tmp_workspace)
 
-    result = pylsp_rename(config, tmp_workspace, doc, position, "bar")
+    result = rols_rename(config, tmp_workspace, doc, position, "bar")
     assert len(result.keys()) == 1
 
     changes = result.get("documentChanges")

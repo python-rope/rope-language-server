@@ -3,7 +3,7 @@
 
 import pytest
 
-from pylsp import uris
+from rols import uris
 from test import unix_only, windows_only
 
 

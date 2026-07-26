@@ -6,10 +6,10 @@ import sys
 
 import pytest
 
-from pylsp import uris
-from pylsp.lsp import SymbolKind
-from pylsp.plugins.symbols import pylsp_document_symbols
-from pylsp.workspace import Document
+from rols import uris
+from rols.lsp import SymbolKind
+from rols.plugins.symbols import rols_document_symbols
+from rols.workspace import Document
 
 PY2 = sys.version[0] == "2"
 LINUX = sys.platform.startswith("linux")
@@ -62,7 +62,7 @@ def helper_check_symbols_all_scope(symbols):
 def test_symbols(config, workspace):
     doc = Document(DOC_URI, workspace, DOC)
     config.update({"plugins": {"jedi_symbols": {"all_scopes": False}}})
-    symbols = pylsp_document_symbols(config, doc)
+    symbols = rols_document_symbols(config, doc)
 
     # All four symbols (import sys, a, B, main)
     # y is not in the root scope, it shouldn't be returned
@@ -87,7 +87,7 @@ def test_symbols(config, workspace):
 def test_symbols_complex_imports(config, workspace):
     doc = Document(DOC_URI, workspace, DOC_IMPORTS)
     config.update({"plugins": {"jedi_symbols": {"all_scopes": False}}})
-    symbols = pylsp_document_symbols(config, doc)
+    symbols = rols_document_symbols(config, doc)
 
     import_symbols = [s for s in symbols if s["kind"] == SymbolKind.Module]
 
@@ -104,7 +104,7 @@ def test_symbols_complex_imports(config, workspace):
 
 def test_symbols_all_scopes(config, workspace) -> None:
     doc = Document(DOC_URI, workspace, DOC)
-    symbols = pylsp_document_symbols(config, doc)
+    symbols = rols_document_symbols(config, doc)
     helper_check_symbols_all_scope(symbols)
 
 
@@ -114,7 +114,7 @@ def test_symbols_non_existing_file(config, workspace, tmpdir) -> None:
     assert not path.check(exists=1)
 
     doc = Document(uris.from_fs_path(str(path)), workspace, DOC)
-    symbols = pylsp_document_symbols(config, doc)
+    symbols = rols_document_symbols(config, doc)
     helper_check_symbols_all_scope(symbols)
 
 
@@ -126,7 +126,7 @@ def test_symbols_all_scopes_with_jedi_environment(workspace) -> None:
 
     # Update config extra environment
     env_path = "/tmp/pyenv/bin/python"
-    settings = {"pylsp": {"plugins": {"jedi": {"environment": env_path}}}}
+    settings = {"rols": {"plugins": {"jedi": {"environment": env_path}}}}
     doc.update_config(settings)
-    symbols = pylsp_document_symbols(doc._config, doc)
+    symbols = rols_document_symbols(doc._config, doc)
     helper_check_symbols_all_scope(symbols)

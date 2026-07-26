@@ -1,8 +1,8 @@
 # Copyright 2021- Python Language Server Contributors.
 
-from pylsp import uris
-from pylsp.plugins.type_definition import pylsp_type_definition
-from pylsp.workspace import Document
+from rols import uris
+from rols.plugins.type_definition import rols_type_definition
+from rols.workspace import Document
 
 DOC_URI = uris.from_fs_path(__file__)
 DOC = """\
@@ -32,7 +32,7 @@ def test_type_definitions(config, workspace) -> None:
     }
 
     doc = Document(DOC_URI, workspace, DOC)
-    assert [{"uri": DOC_URI, "range": def_range}] == pylsp_type_definition(
+    assert [{"uri": DOC_URI, "range": def_range}] == rols_type_definition(
         config, doc, cursor_pos
     )
 
@@ -43,7 +43,7 @@ def test_builtin_definition(config, workspace) -> None:
 
     doc = Document(DOC_URI, workspace, DOC)
 
-    defns = pylsp_type_definition(config, doc, cursor_pos)
+    defns = rols_type_definition(config, doc, cursor_pos)
     assert len(defns) == 1
     assert defns[0]["uri"].endswith("builtins.pyi")
 
@@ -91,6 +91,6 @@ def main() -> None:
     # The position where IntPair is called in main.py
     cursor_pos = {"line": 5, "character": 14}
 
-    assert [{"uri": module_uri, "range": def_range}] == pylsp_type_definition(
+    assert [{"uri": module_uri, "range": def_range}] == rols_type_definition(
         config, doc, cursor_pos
     )

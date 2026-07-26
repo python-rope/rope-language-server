@@ -3,9 +3,9 @@
 
 import os
 
-from pylsp import uris
-from pylsp.plugins.hover import pylsp_hover
-from pylsp.workspace import Document
+from rols import uris
+from rols.plugins.hover import rols_hover
+from rols.workspace import Document
 
 DOC_URI = uris.from_fs_path(__file__)
 DOC = """
@@ -38,24 +38,24 @@ def test_numpy_hover(workspace) -> None:
     doc = Document(DOC_URI, workspace, NUMPY_DOC)
 
     contents = ""
-    assert contents in pylsp_hover(doc._config, doc, no_hov_position)["contents"]
+    assert contents in rols_hover(doc._config, doc, no_hov_position)["contents"]
 
     contents = "NumPy\n=====\n\nProvides\n"
     assert (
         contents
-        in pylsp_hover(doc._config, doc, numpy_hov_position_1)["contents"]["value"]
+        in rols_hover(doc._config, doc, numpy_hov_position_1)["contents"]["value"]
     )
 
     contents = "NumPy\n=====\n\nProvides\n"
     assert (
         contents
-        in pylsp_hover(doc._config, doc, numpy_hov_position_2)["contents"]["value"]
+        in rols_hover(doc._config, doc, numpy_hov_position_2)["contents"]["value"]
     )
 
     contents = "NumPy\n=====\n\nProvides\n"
     assert (
         contents
-        in pylsp_hover(doc._config, doc, numpy_hov_position_3)["contents"]["value"]
+        in rols_hover(doc._config, doc, numpy_hov_position_3)["contents"]["value"]
     )
 
     # https://github.com/davidhalter/jedi/issues/1746
@@ -65,7 +65,7 @@ def test_numpy_hover(workspace) -> None:
         contents = "Trigonometric sine, element-wise.\n\n"
         assert (
             contents
-            in pylsp_hover(doc._config, doc, numpy_sin_hov_position)["contents"][
+            in rols_hover(doc._config, doc, numpy_sin_hov_position)["contents"][
                 "value"
             ]
         )
@@ -84,9 +84,9 @@ def test_hover(workspace) -> None:
         "value": "```python\nmain(a: float, b: float)\n```\n\n\nhello world",
     }
 
-    assert {"contents": contents} == pylsp_hover(doc._config, doc, hov_position)
+    assert {"contents": contents} == rols_hover(doc._config, doc, hov_position)
 
-    assert {"contents": ""} == pylsp_hover(doc._config, doc, no_hov_position)
+    assert {"contents": ""} == rols_hover(doc._config, doc, no_hov_position)
 
 
 def test_hover_signature_formatting(workspace) -> None:
@@ -102,7 +102,7 @@ def test_hover_signature_formatting(workspace) -> None:
         "value": "```python\nmain(\n    a: float,\n    b: float,\n)\n```\n\n\nhello world",
     }
 
-    assert {"contents": contents} == pylsp_hover(doc._config, doc, hov_position)
+    assert {"contents": contents} == rols_hover(doc._config, doc, hov_position)
 
 
 def test_hover_signature_formatting_opt_out(workspace) -> None:
@@ -117,7 +117,7 @@ def test_hover_signature_formatting_opt_out(workspace) -> None:
         "value": "```python\nmain(a: float, b: float)\n```\n\n\nhello world",
     }
 
-    assert {"contents": contents} == pylsp_hover(doc._config, doc, hov_position)
+    assert {"contents": contents} == rols_hover(doc._config, doc, hov_position)
 
 
 def test_document_path_hover(workspace_other_root_path, tmpdir) -> None:
@@ -140,7 +140,7 @@ foo"""
     doc = Document(doc_uri, workspace_other_root_path, doc_content)
 
     cursor_pos = {"line": 1, "character": 3}
-    contents = pylsp_hover(doc._config, doc, cursor_pos)["contents"]
+    contents = rols_hover(doc._config, doc, cursor_pos)["contents"]
 
     assert "A docstring for foo." in contents["value"]
 
@@ -156,4 +156,4 @@ def test_hover_without_docstring(workspace_with_signature_docstring_disabled) ->
         "value": "```python\nmain(a: float, b: float)\n```\n",
     }
 
-    assert {"contents": contents} == pylsp_hover(doc._config, doc, hov_position)
+    assert {"contents": contents} == rols_hover(doc._config, doc, hov_position)

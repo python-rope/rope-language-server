@@ -77,7 +77,6 @@ def test_not_exit_without_check_parent_process_flag(
 
 
 @flaky(max_runs=10, min_passes=1)
-@pytest.mark.skipif(RUNNING_IN_CI, reason="This test is hanging on CI")
 def test_missing_message(client_server_pair) -> None:
     client, _ = client_server_pair
     with pytest.raises(JsonRpcMethodNotFound):

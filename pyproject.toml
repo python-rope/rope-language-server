@@ -6,7 +6,7 @@ requires = ["setuptools>=69.0.0", "setuptools_scm[toml]>=3.4.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "python-lsp-server"
+name = "rope-language-server"
 authors = [{name = "Python Language Server Contributors"}]
 description = "Python Language Server for the Language Server Protocol"
 readme = "README.md"
@@ -16,7 +16,7 @@ requires-python = ">=3.9"
 dependencies = [
     "docstring-to-markdown",
     "importlib_metadata>=4.8.3;python_version<\"3.10\"",
-    "jedi>=0.17.2,<0.21.0",
+    "jedi>=0.17.2",
     "pluggy>=1.0.0",
     "python-lsp-jsonrpc>=1.1.0,<2.0.0",
     "ujson>=3.0.0",
@@ -25,7 +25,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-Homepage = "https://github.com/python-lsp/python-lsp-server"
+Homepage = "https://github.com/python-lsp/rope-language-server"
 
 [project.optional-dependencies]
 all = [
@@ -63,31 +63,31 @@ test = [
     "websockets>=10.3",
 ]
 
-[project.entry-points.pylsp]
-autopep8 = "pylsp.plugins.autopep8_format"
-folding = "pylsp.plugins.folding"
-flake8 = "pylsp.plugins.flake8_lint"
-jedi_completion = "pylsp.plugins.jedi_completion"
-jedi_definition = "pylsp.plugins.definition"
-jedi_type_definition = "pylsp.plugins.type_definition"
-jedi_hover = "pylsp.plugins.hover"
-jedi_highlight = "pylsp.plugins.highlight"
-jedi_references = "pylsp.plugins.references"
-jedi_rename = "pylsp.plugins.jedi_rename"
-jedi_signature_help = "pylsp.plugins.signature"
-jedi_symbols = "pylsp.plugins.symbols"
-mccabe = "pylsp.plugins.mccabe_lint"
-preload = "pylsp.plugins.preload_imports"
-pycodestyle = "pylsp.plugins.pycodestyle_lint"
-pydocstyle = "pylsp.plugins.pydocstyle_lint"
-pyflakes = "pylsp.plugins.pyflakes_lint"
-pylint = "pylsp.plugins.pylint_lint"
-rope_completion = "pylsp.plugins.rope_completion"
-rope_autoimport = "pylsp.plugins.rope_autoimport"
-yapf = "pylsp.plugins.yapf_format"
+[project.entry-points.rols]
+autopep8 = "rols.plugins.autopep8_format"
+folding = "rols.plugins.folding"
+flake8 = "rols.plugins.flake8_lint"
+jedi_completion = "rols.plugins.jedi_completion"
+jedi_definition = "rols.plugins.definition"
+jedi_type_definition = "rols.plugins.type_definition"
+jedi_hover = "rols.plugins.hover"
+jedi_highlight = "rols.plugins.highlight"
+jedi_references = "rols.plugins.references"
+jedi_rename = "rols.plugins.jedi_rename"
+jedi_signature_help = "rols.plugins.signature"
+jedi_symbols = "rols.plugins.symbols"
+mccabe = "rols.plugins.mccabe_lint"
+preload = "rols.plugins.preload_imports"
+pycodestyle = "rols.plugins.pycodestyle_lint"
+pydocstyle = "rols.plugins.pydocstyle_lint"
+pyflakes = "rols.plugins.pyflakes_lint"
+pylint = "rols.plugins.pylint_lint"
+rope_completion = "rols.plugins.rope_completion"
+rope_autoimport = "rols.plugins.rope_autoimport"
+yapf = "rols.plugins.yapf_format"
 
 [project.scripts]
-pylsp = "pylsp.__main__:main"
+rols = "rols.__main__:main"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -178,12 +178,12 @@ exclude = ["contrib", "docs", "test", "test.*", "test.plugins", "test.plugins.*"
 namespaces = false
 
 [tool.setuptools_scm]
-write_to = "pylsp/_version.py"
+write_to = "rols/_version.py"
 write_to_template = "__version__ = \"{version}\"\n"  # VERSION_INFO is populated in __main__
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
-addopts = "--cov-report html --cov-report term --junitxml=pytest.xml --cov pylsp --cov test"
+addopts = "--cov-report html --cov-report term --junitxml=pytest.xml --cov rols --cov test"
 
 [tool.coverage.run]
 concurrency = ["multiprocessing", "thread"]

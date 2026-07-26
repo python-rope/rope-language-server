@@ -7,19 +7,19 @@ import jedi
 import parso
 import pytest
 
-from pylsp import IS_WIN, lsp, uris
-from pylsp.config.config import Config
-from pylsp.plugins.rope_autoimport import (
+from rols import IS_WIN, lsp, uris
+from rols.config.config import Config
+from rols.plugins.rope_autoimport import (
     _get_score,
     _should_insert,
     cache,
     get_name_or_module,
     get_names,
 )
-from pylsp.plugins.rope_autoimport import (
-    pylsp_completions as pylsp_autoimport_completions,
+from rols.plugins.rope_autoimport import (
+    rols_completions as rols_autoimport_completions,
 )
-from pylsp.workspace import Workspace
+from rols.workspace import Workspace
 from test.test_notebook_document import wait_for_condition
 from test.test_utils import send_initialize_request, send_notebook_did_open
 
@@ -42,7 +42,7 @@ def contains_autoimport_quickfix(suggestion: dict[str, Any], module: str) -> boo
 def autoimport_workspace(tmp_path_factory) -> Workspace:
     "Special autoimport workspace. Persists across sessions to make in-memory sqlite3 database fast."
     workspace = Workspace(
-        uris.from_fs_path(str(tmp_path_factory.mktemp("pylsp"))), Mock()
+        uris.from_fs_path(str(tmp_path_factory.mktemp("rols"))), Mock()
     )
     workspace._config = Config(workspace.root_uri, {}, 0, {})
     workspace._config.update(
@@ -66,7 +66,7 @@ def completions(config: Config, autoimport_workspace: Workspace, request) -> Non
     com_position = {"line": 0, "character": position}
     autoimport_workspace.put_document(DOC_URI, source=document)
     doc = autoimport_workspace.get_document(DOC_URI)
-    yield pylsp_autoimport_completions(
+    yield rols_autoimport_completions(
         config, autoimport_workspace, doc, com_position, None
     )
     autoimport_workspace.rm_document(DOC_URI)
@@ -170,7 +170,7 @@ def test_autoimport_defined_name(config, workspace) -> None:
     com_position = {"line": 1, "character": 3}
     workspace.put_document(DOC_URI, source=document)
     doc = workspace.get_document(DOC_URI)
-    completions = pylsp_autoimport_completions(
+    completions = rols_autoimport_completions(
         config, workspace, doc, com_position, None
     )
     workspace.rm_document(DOC_URI)
@@ -281,7 +281,7 @@ def test_autoimport_code_actions_and_completions_for_notebook_document(
     send_initialize_request(
         client,
         {
-            "pylsp": {
+            "rols": {
                 "plugins": {
                     "rope_autoimport": {
                         "memory": True,
@@ -370,7 +370,7 @@ def test_autoimport_code_actions_and_completions_based_on_mypy_error(
     send_initialize_request(
         client,
         {
-            "pylsp": {
+            "rols": {
                 "plugins": {
                     "rope_autoimport": {
                         "memory": True,

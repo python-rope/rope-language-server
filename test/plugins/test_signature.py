@@ -3,9 +3,9 @@
 
 import pytest
 
-from pylsp import uris
-from pylsp.plugins import signature
-from pylsp.workspace import Document
+from rols import uris
+from rols.plugins import signature
+from rols.workspace import Document
 
 DOC_URI = uris.from_fs_path(__file__)
 DOC = """import sys
@@ -47,7 +47,7 @@ def test_no_signature(workspace) -> None:
     sig_position = {"line": 9, "character": 0}
     doc = Document(DOC_URI, workspace, DOC)
 
-    sigs = signature.pylsp_signature_help(doc._config, doc, sig_position)["signatures"]
+    sigs = signature.rols_signature_help(doc._config, doc, sig_position)["signatures"]
     assert not sigs
 
 
@@ -56,7 +56,7 @@ def test_signature(workspace) -> None:
     sig_position = {"line": 10, "character": 5}
     doc = Document(DOC_URI, workspace, DOC)
 
-    sig_info = signature.pylsp_signature_help(doc._config, doc, sig_position)
+    sig_info = signature.rols_signature_help(doc._config, doc, sig_position)
 
     sigs = sig_info["signatures"]
     assert len(sigs) == 1
@@ -75,7 +75,7 @@ def test_multi_line_signature(workspace) -> None:
     sig_position = {"line": 17, "character": 5}
     doc = Document(DOC_URI, workspace, MULTI_LINE_DOC)
 
-    sig_info = signature.pylsp_signature_help(doc._config, doc, sig_position)
+    sig_info = signature.rols_signature_help(doc._config, doc, sig_position)
 
     sigs = sig_info["signatures"]
     assert len(sigs) == 1
@@ -113,7 +113,7 @@ def test_signature_without_docstring(
     sig_position = {"line": 10, "character": 5}
     doc = Document(DOC_URI, workspace_with_signature_docstring_disabled, DOC)
 
-    sig_info = signature.pylsp_signature_help(doc._config, doc, sig_position)
+    sig_info = signature.rols_signature_help(doc._config, doc, sig_position)
 
     sigs = sig_info["signatures"]
     assert len(sigs) == 1

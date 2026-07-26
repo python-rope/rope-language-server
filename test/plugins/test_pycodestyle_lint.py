@@ -5,9 +5,9 @@ import os
 
 import pytest
 
-from pylsp import lsp, uris
-from pylsp.plugins import pycodestyle_lint
-from pylsp.workspace import Document
+from rols import lsp, uris
+from rols.plugins import pycodestyle_lint
+from rols.workspace import Document
 
 DOC_URI = uris.from_fs_path(__file__)
 DOC = """import sys
@@ -26,7 +26,7 @@ import json
 
 def test_pycodestyle(workspace) -> None:
     doc = Document(DOC_URI, workspace, DOC)
-    diags = pycodestyle_lint.pylsp_lint(workspace, doc)
+    diags = pycodestyle_lint.rols_lint(workspace, doc)
 
     assert all(d["source"] == "pycodestyle" for d in diags)
 
@@ -84,7 +84,7 @@ def test_pycodestyle_config(workspace) -> None:
     doc = workspace.get_document(doc_uri)
 
     # Make sure we get a warning for 'indentation contains tabs'
-    diags = pycodestyle_lint.pylsp_lint(workspace, doc)
+    diags = pycodestyle_lint.rols_lint(workspace, doc)
     assert [d for d in diags if d["code"] == "W191"]
 
     content = {
@@ -101,7 +101,7 @@ def test_pycodestyle_config(workspace) -> None:
         workspace._config.settings.cache_clear()
 
         # And make sure we don't get any warnings
-        diags = pycodestyle_lint.pylsp_lint(workspace, doc)
+        diags = pycodestyle_lint.rols_lint(workspace, doc)
         assert len([d for d in diags if d["code"] == "W191"]) == (0 if working else 1)
         assert len([d for d in diags if d["code"] == "E201"]) == (0 if working else 1)
         assert [d for d in diags if d["code"] == "W391"]
@@ -111,7 +111,7 @@ def test_pycodestyle_config(workspace) -> None:
     # Make sure we can ignore via the PYLS config as well
     workspace._config.update({"plugins": {"pycodestyle": {"ignore": ["W191", "E201"]}}})
     # And make sure we only get one warning
-    diags = pycodestyle_lint.pylsp_lint(workspace, doc)
+    diags = pycodestyle_lint.rols_lint(workspace, doc)
     assert not [d for d in diags if d["code"] == "W191"]
     assert not [d for d in diags if d["code"] == "E201"]
     assert [d for d in diags if d["code"] == "W391"]
@@ -130,7 +130,7 @@ def test_line_endings(workspace, newline) -> None:
     doc = Document(DOC_URI, workspace, source)
 
     # Get diagnostics
-    diags = pycodestyle_lint.pylsp_lint(workspace, doc)
+    diags = pycodestyle_lint.rols_lint(workspace, doc)
 
     # Assert no diagnostics were given
     assert len(diags) == 0
