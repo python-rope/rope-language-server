@@ -3,10 +3,8 @@ name: Static code analysis
 on:
   push:
     branches:
-      - rope_dev
+      - main
   pull_request:
-    branches:
-      - '*'
 
 concurrency:
   group: static-${{ forgejo.ref }}

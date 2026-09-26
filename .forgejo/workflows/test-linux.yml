@@ -3,10 +3,8 @@ name: Linux tests
 on:
   push:
     branches:
-      - rope_dev
+      - main
   pull_request:
-    branches:
-      - '*'
 
 concurrency:
   group: test-linux-${{ forgejo.ref }}
