@@ -71,6 +71,7 @@ class Workspace:
         self.__rope = None
         self.__rope_config = None
         self.__rope_autoimport = None
+        self.__rope_open_connections = []
 
     def _rope_autoimport(
         self,
@@ -82,6 +83,13 @@ class Workspace:
         if self.__rope_autoimport is None:
             project = self._rope_project_builder(rope_config)
             self.__rope_autoimport = AutoImport(project, memory=memory)
+            # The AutoImport's in-memory database is shared between threads
+            # through per-thread sqlite3 connections (see
+            # ``rope.contrib.autoimport.sqlite.AutoImport``). Connections
+            # created outside of this thread (e.g. inside the background
+            # cache worker) are not closed by ``close`` above unless they
+            # are tracked here or by external code.
+            self.__rope_open_connections.append(self.__rope_autoimport.connection)
         return self.__rope_autoimport
 
     def _rope_project_builder(self, rope_config):
@@ -402,6 +410,14 @@ class Workspace:
     def close(self) -> None:
         if self.__rope_autoimport:
             self.__rope_autoimport.close()
+        for connection in self.__rope_open_connections:
+            try:
+                connection.close()
+            except Exception:
+                log.debug(
+                    "Rope autoimport connection could not be closed",
+                    exc_info=True,
+                )
 
 
 class Document:
@@ -434,11 +450,9 @@ class Document:
         return str(self.uri)
 
     def _rope_resource(self, rope_config):
-        from rope.base import libutils
+        from rols.plugins._rope_utils import path_to_resource
 
-        return libutils.path_to_resource(
-            self._rope_project_builder(rope_config), self.path
-        )
+        return path_to_resource(self._rope_project_builder(rope_config), self.path)
 
     @property
     @lock

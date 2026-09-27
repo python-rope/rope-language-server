@@ -9,6 +9,7 @@ cells) and translating between Rope's character offsets and LSP positions.
 """
 
 import logging
+import os.path
 
 from rols import uris
 
@@ -39,10 +40,8 @@ def get_resource(project, document):
     if project is None:
         return None
 
-    from rope.base import libutils
-
     try:
-        resource = libutils.path_to_resource(project, document.path)
+        resource = path_to_resource(project, document.path)
     except Exception:
         return None
 
@@ -61,6 +60,31 @@ def get_resource(project, document):
         return None
 
     return resource
+
+
+def path_to_resource(project, path):
+    """Resolve ``path`` to a Rope ``Resource``.
+
+    This mimics ``rope.base.libutils.path_to_resource``, which would do the
+    same job but goes through ``rope.base.libutils.relative`` - a function
+    deprecated in Rope (calling it emits a DeprecationWarning on every
+    document open, so it is avoided here).
+
+    Returns ``None`` if the path lies outside the project root, the same way
+    the library function does via ``get_no_project()``.
+    """
+    if project is None:
+        return None
+
+    if path == project.address:
+        return project.get_resource("")
+
+    if path.startswith(project.address + os.path.sep):
+        return project.get_resource(os.path.relpath(path, project.address))
+
+    from rope.base.project import get_no_project
+
+    return get_no_project().get_resource(path)
 
 
 def offset_to_position(source, offset):

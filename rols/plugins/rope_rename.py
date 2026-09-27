@@ -4,7 +4,6 @@
 
 import logging
 
-from rope.base import libutils
 from rope.refactor.rename import Rename
 
 from rols import _utils, hookimpl, uris
@@ -23,7 +22,7 @@ def rols_rename(config, workspace, document, position, new_name):
     if project is None:
         return {"documentChanges": []}
 
-    resource = libutils.path_to_resource(project, document.path)
+    resource = _rope_utils.path_to_resource(project, document.path)
     if resource is None:
         return {"documentChanges": []}
 
