@@ -2,6 +2,7 @@
 # Copyright 2021- Python Language Server Contributors.
 
 import os
+import pytest
 
 from rols import uris
 from rols.plugins.hover import rols_hover
@@ -24,6 +25,8 @@ np.sin
 
 
 def test_numpy_hover(workspace) -> None:
+    pytest.importorskip("numpy")
+
     # Over the blank line
     no_hov_position = {"line": 1, "character": 0}
     # Over 'numpy' in import numpy as np

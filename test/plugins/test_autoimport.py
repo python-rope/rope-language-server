@@ -279,6 +279,34 @@ def test_autoimport_module_cache_runs_single_threaded(workspace) -> None:
     assert autoimport.generate_modules_cache.call_args.kwargs["single_thread"] is True
 
 
+def test_autoimport_cache_closes_worker_connection(workspace) -> None:
+    autoimport_cache = AutoimportCache()
+    autoimport = Mock()
+    autoimport.project.get_python_files.return_value = []
+    mock_conn = Mock()
+    autoimport.thread_local = threading.local()
+    autoimport.thread_local.connection = mock_conn
+
+    autoimport_cache._reload_cache(workspace, autoimport, close_connection=True)
+
+    mock_conn.close.assert_called_once_with()
+    assert not hasattr(autoimport.thread_local, "connection")
+
+
+def test_autoimport_cache_preserves_connection_when_single_threaded(workspace) -> None:
+    autoimport_cache = AutoimportCache()
+    autoimport = Mock()
+    autoimport.project.get_python_files.return_value = []
+    mock_conn = Mock()
+    autoimport.thread_local = threading.local()
+    autoimport.thread_local.connection = mock_conn
+
+    autoimport_cache._reload_cache(workspace, autoimport, close_connection=False)
+
+    mock_conn.close.assert_not_called()
+    assert autoimport.thread_local.connection is mock_conn
+
+
 # Tests ruff, flake8 and pyflakes messages
 @pytest.mark.parametrize(
     "message",

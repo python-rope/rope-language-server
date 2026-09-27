@@ -184,6 +184,11 @@ write_to_template = "__version__ = \"{version}\"\n"  # VERSION_INFO is populated
 [tool.pytest.ini_options]
 testpaths = ["test"]
 addopts = "--cov-report html --cov-report term --junitxml=pytest.xml --cov rols --cov test"
+filterwarnings = [
+    "ignore::DeprecationWarning:rope.base.project",
+    "ignore::DeprecationWarning:rope.base.libutils",
+    "ignore::DeprecationWarning:rope.contrib.autoimport.sqlite",
+]
 
 [tool.coverage.run]
 concurrency = ["multiprocessing", "thread"]

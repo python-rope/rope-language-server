@@ -65,11 +65,16 @@ class AutoimportCache:
             # why we decided to move cache creation into its own thread.
             if delay:
                 self.thread = threading.Timer(
-                    delay, self._reload_cache, (workspace, autoimport, resources)
+                    delay,
+                    self._reload_cache,
+                    args=(workspace, autoimport, resources),
+                    kwargs={"close_connection": True},
                 )
             else:
                 self.thread = threading.Thread(
-                    target=self._reload_cache, args=(workspace, autoimport, resources)
+                    target=self._reload_cache,
+                    args=(workspace, autoimport, resources),
+                    kwargs={"close_connection": True},
                 )
             self.thread.daemon = True
             self.thread.start()
@@ -79,6 +84,7 @@ class AutoimportCache:
         workspace: Workspace,
         autoimport: AutoImport,
         resources: Optional[list[Resource]] = None,
+        close_connection: bool = False,
     ) -> None:
         task_handle = PylspTaskHandle(workspace, self._stopped)
         try:
@@ -88,6 +94,24 @@ class AutoimportCache:
             )
         except InterruptedTaskError:
             log.debug("Autoimport cache generation cancelled")
+        finally:
+            if close_connection:
+                self._close_thread_connection(autoimport)
+
+    @staticmethod
+    def _close_thread_connection(autoimport: Any) -> None:
+        thread_local = getattr(autoimport, "thread_local", None)
+        conn = getattr(thread_local, "connection", None)
+        if conn is not None and hasattr(conn, "close"):
+            try:
+                conn.close()
+            except Exception:
+                log.debug("Failed to close autoimport thread connection", exc_info=True)
+            finally:
+                try:
+                    del thread_local.connection
+                except Exception:
+                    pass
 
     def _generate_cache(
         self,
