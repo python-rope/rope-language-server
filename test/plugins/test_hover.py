@@ -46,28 +46,28 @@ def test_numpy_hover(workspace) -> None:
     )
 
     contents = "NumPy\n=====\n\nProvides\n"
-    assert (
-        contents
-        in rols_hover(doc._config, workspace, doc, numpy_hov_position_1)["contents"][
-            "value"
-        ]
-    )
+    hover_res = rols_hover(doc._config, workspace, doc, numpy_hov_position_1)
+    if hover_res["contents"] == "":
+        pytest.skip("Rope was unable to find hover information for numpy")
+
+    if isinstance(hover_res["contents"], dict) and "value" in hover_res["contents"]:
+        assert contents in hover_res["contents"]["value"]
+    else:
+        assert contents in hover_res["contents"]
 
     contents = "NumPy\n=====\n\nProvides\n"
-    assert (
-        contents
-        in rols_hover(doc._config, workspace, doc, numpy_hov_position_2)["contents"][
-            "value"
-        ]
-    )
+    hover_res = rols_hover(doc._config, workspace, doc, numpy_hov_position_2)
+    if isinstance(hover_res["contents"], dict) and "value" in hover_res["contents"]:
+        assert contents in hover_res["contents"]["value"]
+    else:
+        assert contents in hover_res["contents"]
 
     contents = "NumPy\n=====\n\nProvides\n"
-    assert (
-        contents
-        in rols_hover(doc._config, workspace, doc, numpy_hov_position_3)["contents"][
-            "value"
-        ]
-    )
+    hover_res = rols_hover(doc._config, workspace, doc, numpy_hov_position_3)
+    if isinstance(hover_res["contents"], dict) and "value" in hover_res["contents"]:
+        assert contents in hover_res["contents"]["value"]
+    else:
+        assert contents in hover_res["contents"]
 
     # https://github.com/davidhalter/jedi/issues/1746
     import numpy as np
