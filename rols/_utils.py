@@ -276,15 +276,19 @@ class Formatter:
             return False
 
 
+class RuffFormatter(Formatter):
+    command = ["ruff", "format"]
+
+
 class BlackFormatter(Formatter):
     command = ["black"]
 
 
-formatters = {"black": BlackFormatter()}
+formatters = {"ruff": RuffFormatter(), "black": BlackFormatter()}
 
 
 def format_signature(signature: str, config: dict, signature_formatter: str) -> str:
-    """Formats signature using Black if it is available."""
+    """Formats signature using Ruff or Black if the selected tool is available."""
     as_func = f"def {signature.strip()}:\n    pass"
     line_length = config.get("line_length", 88)
     formatter = formatters[signature_formatter]

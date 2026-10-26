@@ -235,10 +235,29 @@ def test_clip_column() -> None:
 
 
 def test_signature_formatter_uses_black() -> None:
-    assert set(_utils.formatters) == {"black"}
+    assert set(_utils.formatters) == {"black", "ruff"}
     assert _utils.convert_signatures_to_markdown(
         ["example(value:int=1)->str"], {}
     ) == _utils.wrap_signature("example(value: int = 1) -> str")
+
+
+def test_signature_formatter_uses_ruff() -> None:
+    formatter = _utils.formatters["ruff"]
+    assert formatter.command == ["ruff", "format"]
+    with (
+        mock.patch.object(
+            type(formatter), "is_installed", new_callable=mock.PropertyMock
+        ) as installed,
+        mock.patch.object(formatter, "format") as format_code,
+    ):
+        installed.return_value = True
+        format_code.return_value = "def example(value: int = 1) -> str:\n    pass"
+        assert _utils.convert_signatures_to_markdown(
+            ["example(value:int=1)->str"], {"formatter": "ruff", "line_length": 100}
+        ) == _utils.wrap_signature("example(value: int = 1) -> str")
+        format_code.assert_called_once_with(
+            "def example(value:int=1)->str:\n    pass", line_length=100
+        )
 
 
 def test_signature_formatter_can_be_disabled() -> None:

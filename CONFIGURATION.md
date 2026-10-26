@@ -59,7 +59,7 @@ This server can be configured using the `workspace/didChangeConfiguration` metho
 | `rols.plugins.yapf.enabled` | `boolean` | Enable or disable the plugin. | `true` |
 | `rols.rope.extensionModules` | `string` | Builtin and c-extension modules that are allowed to be imported and inspected by rope. | `null` |
 | `rols.rope.ropeFolder` | `array` of unique `string` items | The name of the folder in which rope stores project configurations and data.  Pass `null` for not using such a folder at all. | `null` |
-| `rols.signature.formatter` | `string` (one of: `'black'`, `None`) | Formatter to use for reformatting signatures in docstrings. | `"black"` |
+| `rols.signature.formatter` | `string` (one of: `'black'`, `'ruff'`, `None`) | Formatter to use for reformatting signatures in docstrings. | `"black"` |
 | `rols.signature.include_docstring` | `boolean` | Include signature docstring. | `true` |
 | `rols.signature.line_length` | `integer` | Maximum line length in signatures. | `88` |
 
