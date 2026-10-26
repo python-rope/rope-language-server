@@ -2,7 +2,7 @@
 
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from threading import Lock
+from threading import Lock, get_ident
 
 from pylsp_jsonrpc.endpoint import CANCEL_METHOD, Endpoint
 from pylsp_jsonrpc.exceptions import JsonRpcRequestCancelled
@@ -19,7 +19,10 @@ class OrderedEndpoint(Endpoint):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._messages = ThreadPoolExecutor(max_workers=1)
+        self._worker_id = None
+        self._messages = ThreadPoolExecutor(
+            max_workers=1, initializer=self._remember_worker
+        )
         self._pending = {}
         self._pending_lock = Lock()
 
@@ -34,7 +37,7 @@ class OrderedEndpoint(Endpoint):
 
         if message.get("method") == "exit":
             # Close input on the reader thread, not while it holds a read lock.
-            self._messages.shutdown(wait=True)
+            self.run_on_worker(lambda: None)
             return super().consume(message)
 
         request_id = message.get("id")
@@ -98,7 +101,15 @@ class OrderedEndpoint(Endpoint):
 
         return completed
 
+    def _remember_worker(self):
+        self._worker_id = get_ident()
+
+    def run_on_worker(self, callback):
+        """Finish queued messages before cleanup on the document-owning thread."""
+        if get_ident() == self._worker_id:
+            return callback()
+        return self._messages.submit(callback).result()
+
     def shutdown(self):
-        # exit is dispatched by this worker, which cannot join itself.
-        self._messages.shutdown(wait=False)
+        self._messages.shutdown(wait=get_ident() != self._worker_id)
         super().shutdown()

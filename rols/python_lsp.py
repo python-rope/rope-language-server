@@ -248,6 +248,8 @@ class RopeLanguageServer(MethodDispatcher):
         raise KeyError()
 
     def m_shutdown(self, **_kwargs) -> None:
+        if self._shutdown:
+            return
         self._hook("rols_shutdown")
         for workspace in self.workspaces.values():
             workspace.close()
@@ -263,7 +265,10 @@ class RopeLanguageServer(MethodDispatcher):
 
     def m_exit(self, **_kwargs) -> None:
         if not self._shutdown:
-            self.m_shutdown()
+            if isinstance(self._endpoint, OrderedEndpoint):
+                self._endpoint.run_on_worker(self.m_shutdown)
+            else:
+                self.m_shutdown()
         self._endpoint.shutdown()
         if self._jsonrpc_stream_reader is not None:
             self._jsonrpc_stream_reader.close()
