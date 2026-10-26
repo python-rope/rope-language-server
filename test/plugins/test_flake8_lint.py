@@ -67,13 +67,15 @@ def test_flake8_respecting_configuration(workspace) -> None:
         ("src/b.py", "import os"),
         (
             "setup.cfg",
-            dedent("""
+            dedent(
+                """
         [flake8]
         ignore = E302,W191
         per-file-ignores =
             src/a.py:F401
             src/b.py:W292
-        """),
+        """
+            ),
         ),
     ]
 

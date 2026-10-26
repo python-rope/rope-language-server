@@ -223,7 +223,8 @@ def test_sort_both() -> None:
 
 
 def test_get_names() -> None:
-    source = textwrap.dedent("""
+    source = textwrap.dedent(
+        """
         from a import s as e
         import blah, bleh
         hello = "str"
@@ -232,7 +233,8 @@ def test_get_names() -> None:
             soemthing
         class sfa:
             sfiosifo
-        """)
+        """
+    )
     results = get_names(source)
     assert results == {"blah", "bleh", "e", "hello", "someone", "sfa", "a", "b"}
 

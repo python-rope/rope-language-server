@@ -52,7 +52,6 @@ Installing these plugins will add extra functionality to the language server:
 - [python-lsp-isort](https://github.com/chantera/python-lsp-isort): code formatting using [isort](https://github.com/PyCQA/isort) (automatic import sorting).
 - [python-lsp-black](https://github.com/python-lsp/python-lsp-black): code formatting using [Black](https://github.com/psf/black).
 - [pyls-memestra](https://github.com/QuantStack/pyls-memestra): detecting the use of deprecated APIs.
-- [python-lsp-ruff](https://github.com/python-lsp/python-lsp-ruff): Extensive and fast linting using [ruff](https://github.com/charliermarsh/ruff).
 
 Please see the above repositories for examples on how to write plugins for the Python LSP Server.
 
@@ -151,11 +150,15 @@ To run the test suite:
 pytest
 ```
 
-Running ruff as a linter and code formatter on the repo:
+Use the same Black version as CI to avoid formatting differences between releases:
 ```sh
-ruff check .  # linter
-ruff check --fix .  # fix all auto-fixable lint issues
-ruff format .  # format the document
+python3 -m pip install black==25.11.0
+python3 -m black .
+```
+
+Check formatting without changing files:
+```sh
+python3 -m black --check .
 ```
 
 After adding configuration options to `schema.json`, refresh the `CONFIGURATION.md` file with

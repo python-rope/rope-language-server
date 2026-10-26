@@ -234,6 +234,20 @@ def test_clip_column() -> None:
     assert _utils.clip_column(4, ["123\n", "123"], 1) == 3
 
 
+def test_signature_formatter_uses_black() -> None:
+    assert set(_utils.formatters) == {"black"}
+    assert _utils.convert_signatures_to_markdown(
+        ["example(value:int=1)->str"], {}
+    ) == _utils.wrap_signature("example(value: int = 1) -> str")
+
+
+def test_signature_formatter_can_be_disabled() -> None:
+    signature = "example(value:int=1)->str"
+    assert _utils.convert_signatures_to_markdown(
+        [signature], {"formatter": None}
+    ) == _utils.wrap_signature(signature)
+
+
 @mock.patch("docstring_to_markdown.convert")
 def test_format_docstring_valid_rst_signature(mock_convert) -> None:
     """Test that a valid RST docstring includes the function signature."""

@@ -37,14 +37,12 @@ jobs:
       # This error cannot be resolved by adding a pylint: disable=unused-argument comment ...
       - run: |
           pip install -e .[pylint,pycodestyle]
-          pip install ruff==0.9.4
-      - name: ruff linter and code style checks
-        run: ruff check pylsp test
-      - name: ruff code formatter check
-        run: ruff format --check pylsp test
+          pip install black==25.11.0
+      - name: Black code formatter check
+        run: python -m black --check .
       - name: Validate JSON schema
-        run: echo {} | jsonschema pylsp/config/schema.json
+        run: echo {} | jsonschema rols/config/schema.json
       - name: Ensure JSON schema and Markdown docs are in sync
         run: |
-          python scripts/jsonschema2md.py pylsp/config/schema.json EXPECTED_CONFIGURATION.md
+          python scripts/jsonschema2md.py rols/config/schema.json EXPECTED_CONFIGURATION.md
           diff EXPECTED_CONFIGURATION.md CONFIGURATION.md

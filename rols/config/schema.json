@@ -420,7 +420,6 @@
       ],
       "enum": [
         "black",
-        "ruff",
         null
       ],
       "default": "black",
