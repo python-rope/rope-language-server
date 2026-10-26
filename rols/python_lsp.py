@@ -16,7 +16,7 @@ except Exception:
     import json
 
 from pylsp_jsonrpc.dispatchers import MethodDispatcher
-from pylsp_jsonrpc.endpoint import Endpoint
+from rols.endpoint import OrderedEndpoint
 from pylsp_jsonrpc.streams import JsonRpcStreamReader, JsonRpcStreamWriter
 
 from . import _utils, lsp, uris
@@ -203,7 +203,7 @@ class RopeLanguageServer(MethodDispatcher):
         else:
             self._jsonrpc_stream_writer = None
 
-        endpoint_cls = endpoint_cls or Endpoint
+        endpoint_cls = endpoint_cls or OrderedEndpoint
 
         # if consumer is None, it is assumed that the default
         # streams-based approach is being used
