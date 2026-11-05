@@ -3,7 +3,8 @@
 A Python 3.9+ implementation of the
 [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)
 using [Rope](https://github.com/python-rope/rope) for completion, renaming,
-definitions, hover, references, signature help and symbols.
+definitions, hover, references, signature help, symbols and
+[refactoring code actions](docs/refactoring.md).
 
 Development and issue tracking are on
 [Codefloe](https://codefloe.com/mcepl/rope-language-server), with a

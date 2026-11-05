@@ -1,5 +1,21 @@
 # History of changes
 
+## Unreleased
+
+### New features
+* Offer Rope refactorings as code actions: extract method and variable,
+  inline, use function, method object, local variable to field, introduce
+  parameter, organise imports, and generate variable, function or class. They
+  work on unsaved documents and return workspace edits, through
+  `codeAction/resolve` or `rols.refactor.*` commands. See
+  [docs/refactoring.md](docs/refactoring.md). Adapted from
+  [pylsp-rope](https://github.com/python-rope/pylsp-rope) by Lie Ryan
+  ([issue 19](https://codefloe.com/mcepl/rope-language-server/issues/19)).
+* Rope reads open documents instead of the files on disk, so rename and the
+  other Rope features see unsaved changes.
+* Code action requests honour `context.only`, and `workspace/executeCommand`
+  runs in the workspace of the document named in its arguments.
+
 ## Version 1.15.0 (2026/07/27)
 
 ### New features
