@@ -53,6 +53,8 @@ This server can be configured using the `workspace/didChangeConfiguration` metho
 | `rols.plugins.rope_autoimport.completions.enabled` | `boolean` | Enable or disable autoimport completions. | `true` |
 | `rols.plugins.rope_autoimport.code_actions.enabled` | `boolean` | Enable or disable autoimport code actions (e.g. for quick fixes). | `true` |
 | `rols.plugins.rope_autoimport.memory` | `boolean` | Make the autoimport database memory only. Drastically increases startup time. | `false` |
+| `rols.plugins.rope_refactor.enabled` | `boolean` | Enable or disable Rope refactoring code actions (extract, inline, use function, method object, local to field, introduce parameter, organise imports and generate). See docs/refactoring.md. | `true` |
+| `rols.plugins.rope_refactor.disabled_actions` | `array` of unique `string` (one of: `'extract_method'`, `'extract_variable'`, `'inline'`, `'use_function'`, `'method_to_method_object'`, `'local_to_field'`, `'introduce_parameter'`, `'organize_imports'`, `'generate'`) items | Rope refactoring code actions not to offer. | `[]` |
 | `rols.plugins.rope_completion.enabled` | `boolean` | Enable or disable the plugin. This is the native Rope-based completion provider, enabled by default. | `true` |
 | `rols.plugins.rope_completion.include_params` | `boolean` | Auto-completes methods and classes with tabstops for each parameter. | `true` |
 | `rols.plugins.rope_completion.eager` | `boolean` | Resolve documentation and detail eagerly. | `false` |

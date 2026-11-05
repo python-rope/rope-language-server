@@ -373,6 +373,31 @@
       "default": false,
       "description": "Make the autoimport database memory only. Drastically increases startup time."
     },
+    "rols.plugins.rope_refactor.enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable or disable Rope refactoring code actions (extract, inline, use function, method object, local to field, introduce parameter, organise imports and generate). See docs/refactoring.md."
+    },
+    "rols.plugins.rope_refactor.disabled_actions": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string",
+        "enum": [
+          "extract_method",
+          "extract_variable",
+          "inline",
+          "use_function",
+          "method_to_method_object",
+          "local_to_field",
+          "introduce_parameter",
+          "organize_imports",
+          "generate"
+        ]
+      },
+      "uniqueItems": true,
+      "description": "Rope refactoring code actions not to offer."
+    },
     "rols.plugins.rope_completion.enabled": {
       "type": "boolean",
       "default": true,

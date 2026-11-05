@@ -397,7 +397,15 @@ def test_autoimport_code_actions_accept_cursor_only_range(client_server_pair, tm
     path = tmp_path / "sample.py"
     path.write_text(source, encoding="utf-8")
     doc_uri = uris.from_fs_path(str(path))
-    settings = {"rols": {"plugins": {"rope_autoimport": {"enabled": True}}}}
+    # Rope refactorings have their own cursor-only tests.
+    settings = {
+        "rols": {
+            "plugins": {
+                "rope_autoimport": {"enabled": True},
+                "rope_refactor": {"enabled": False},
+            }
+        }
+    }
     autoimport_cache = AutoimportCache()
     with (
         patch("rols.plugins.rope_autoimport.cache", autoimport_cache),
