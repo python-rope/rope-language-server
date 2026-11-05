@@ -23,7 +23,9 @@ rols --help
 
 Configure your editor to launch `rols`. It communicates over standard input and
 output by default. The libraries you want Rope to analyse must be available to
-the Python interpreter running `rols`.
+the Python interpreter running `rols`. See the
+[editor and IDE guide](docs/using-rope-in-editors.md) for LSP setup notes and
+other Rope integrations.
 
 The following optional providers are loaded when their dependencies are installed.
 Some require explicit enabling in the editor's settings:
@@ -183,7 +185,13 @@ python3 scripts/jsonschema2md.py rols/config/schema.json CONFIGURATION.md
 ```
 
 For cancellation and responsiveness checks, see
-[docs/cancellation-testing.md](docs/cancellation-testing.md).
+[docs/cancellation-testing.md](docs/cancellation-testing.md). Build the Sphinx
+documentation with MyST using:
+
+```sh
+python3 -m pip install -r docs/requirements.txt
+python3 -m sphinx -b html docs docs/_build/html
+```
 
 ## Licence
 

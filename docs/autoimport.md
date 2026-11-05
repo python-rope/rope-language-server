@@ -13,8 +13,10 @@ This enables both completions and code actions. Disable either independently wit
 `rols.plugins.rope_autoimport.completions.enabled` or
 `rols.plugins.rope_autoimport.code_actions.enabled`.
 
-For the settings structure, see [the README](../README.md#configuration) and the
-[configuration reference](../CONFIGURATION.md).
+For the settings structure, see the README's
+[configuration section](https://codefloe.com/mcepl/rope-language-server#configuration)
+and the
+[configuration reference](https://codefloe.com/mcepl/rope-language-server/src/branch/main/CONFIGURATION.md).
 
 ## Startup
 
@@ -38,8 +40,8 @@ Each completion includes an additional text edit to insert the selected import.
 Code actions offer import quick fixes based on undefined-name diagnostics.
 Imports are inserted into the document's import group. An import-sorting tool can
 apply your preferred ordering afterwards. See the
-[third-party plugin notes](../README.md#third-party-plugins) before installing an
-integration written for another server.
+[third-party plugin notes](https://codefloe.com/mcepl/rope-language-server#third-party-plugins)
+before installing an integration written for another server.
 
 ## Credits
 

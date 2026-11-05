@@ -125,7 +125,7 @@ hide some of them, list their IDs in `rols.plugins.rope_refactor.disabled_action
 The IDs are `extract_method`, `extract_variable`, `inline`, `use_function`,
 `method_to_method_object`, `local_to_field`, `introduce_parameter`,
 `organize_imports` and `generate`. See also the
-[configuration reference](../CONFIGURATION.md).
+[configuration reference](https://codefloe.com/mcepl/rope-language-server/src/branch/main/CONFIGURATION.md).
 
 ## Limitations
 
