@@ -95,13 +95,20 @@ class Workspace:
     def _rope_project_builder(self, rope_config):
         from rope.base.project import Project
 
-        # TODO: we could keep track of dirty files and validate only those
+        from rols.plugins._rope_overlay import WorkspaceFileCommands
+
+        # ``__rope_config`` is never assigned, so every call builds a fresh
+        # project and Rope's module cache cannot outlive a request. If the
+        # project is ever reused, buffer edits must also invalidate that
+        # cache: Rope only notices changes to a file's modification time and
+        # size (python-rope/rope#925).
         if self.__rope is None or self.__rope_config != rope_config:
-            rope_folder = rope_config.get("ropeFolder")
+            # Rope reads modules through the overlay, so it sees the open
+            # documents rather than the files on disk.
+            kwargs = {"fscommands": WorkspaceFileCommands(self, self._root_path)}
             if "ropeFolder" in rope_config:
-                self.__rope = Project(self._root_path, ropefolder=rope_folder)
-            else:
-                self.__rope = Project(self._root_path)
+                kwargs["ropefolder"] = rope_config.get("ropeFolder")
+            self.__rope = Project(self._root_path, **kwargs)
             self.__rope.prefs.set(
                 "extension_modules", rope_config.get("extensionModules", [])
             )
@@ -109,6 +116,22 @@ class Workspace:
             self.__rope.prefs.set("ignore_bad_imports", True)
         self.__rope.validate()
         return self.__rope
+
+    def _rope_overlay_source(self, path):
+        """Return the text of the open document at ``path``, or ``None``."""
+        from rols.plugins._rope_overlay import path_key
+
+        key = path_key(path)
+        # Copy the values: the autoimport thread reads modules while the
+        # request worker opens and closes documents.
+        for document in list(self._docs.values()):
+            if (
+                type(document) is Document
+                and document._source is not None
+                and document.rope_path_key == key
+            ):
+                return document.source
+        return None
 
     @property
     def documents(self):
@@ -195,8 +218,11 @@ class Workspace:
                 return
             document.update_config(settings)
 
-    def apply_edit(self, edit):
-        return self._endpoint.request(self.M_APPLY_EDIT, {"edit": edit})
+    def apply_edit(self, edit, label=None):
+        params = {"edit": edit}
+        if label:
+            params["label"] = label
+        return self._endpoint.request(self.M_APPLY_EDIT, params)
 
     def publish_diagnostics(self, doc_uri, diagnostics, doc_version=None) -> None:
         params = {
@@ -445,9 +471,19 @@ class Document:
         self._extra_sys_path = extra_sys_path or []
         self._rope_project_builder = rope_project_builder
         self._lock = RLock()
+        self._rope_path_key = None
 
     def __str__(self):
         return str(self.uri)
+
+    @property
+    def rope_path_key(self):
+        """Normalised path that matches this document with Rope resources."""
+        if self._rope_path_key is None:
+            from rols.plugins._rope_overlay import path_key
+
+            self._rope_path_key = path_key(self.path)
+        return self._rope_path_key
 
     def _rope_resource(self, rope_config):
         from rols.plugins._rope_utils import path_to_resource

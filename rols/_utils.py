@@ -169,6 +169,19 @@ def match_uri_to_workspace(uri, workspaces):
     return chosen_workspace
 
 
+def code_action_kind_matches(kind, only):
+    """Return whether a code action of ``kind`` passes a ``context.only`` filter.
+
+    A requested kind matches itself and its sub-kinds: ``refactor`` matches
+    ``refactor.extract``. The empty kind matches everything.
+    """
+    kind = kind or ""
+    for requested in only:
+        if requested == "" or kind == requested or kind.startswith(requested + "."):
+            return True
+    return False
+
+
 def list_to_string(value):
     return ",".join(value) if isinstance(value, list) else value
 

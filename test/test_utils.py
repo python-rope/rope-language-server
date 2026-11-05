@@ -4,6 +4,7 @@
 import multiprocessing
 import os
 import sys
+import threading
 import time
 from threading import Thread
 from typing import Any
@@ -76,6 +77,74 @@ def start(obj) -> None:
     obj.start()
 
 
+def apply_text_edits(text, edits):
+    """Apply LSP text edits the way an editor does."""
+    lines = text.splitlines(True)
+
+    def offset(position):
+        if position["line"] >= len(lines):
+            return len(text)
+        return (
+            sum(len(line) for line in lines[: position["line"]]) + position["character"]
+        )
+
+    for edit in sorted(
+        edits,
+        key=lambda e: (e["range"]["start"]["line"], e["range"]["start"]["character"]),
+        reverse=True,
+    ):
+        start = offset(edit["range"]["start"])
+        end = offset(edit["range"]["end"])
+        text = text[:start] + edit["newText"] + text[end:]
+    return text
+
+
+def apply_workspace_edit(texts, edit):
+    """Apply a WorkspaceEdit to ``texts``, a dict of URI to text."""
+    texts = dict(texts)
+    if "documentChanges" in edit:
+        for change in edit["documentChanges"]:
+            uri = change["textDocument"]["uri"]
+            texts[uri] = apply_text_edits(texts[uri], change["edits"])
+    else:
+        for uri, edits in edit["changes"].items():
+            texts[uri] = apply_text_edits(texts[uri], edits)
+    return texts
+
+
+class RecordingClient(RopeLanguageServer):
+    """A fake editor that records the requests the server sends to it.
+
+    It accepts every ``workspace/applyEdit`` request with ``apply_result``.
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.apply_result = {"applied": True}
+        self.applied_edits = []
+        self.edit_applied = threading.Event()
+        self.messages = []
+        self.message_shown = threading.Event()
+
+    def m_workspace__apply_edit(self, edit=None, label=None, **_kwargs):
+        self.applied_edits.append({"edit": edit, "label": label})
+        self.edit_applied.set()
+        return self.apply_result
+
+    def m_window__show_message(self, type=None, message=None, **_kwargs):
+        self.messages.append({"type": type, "message": message})
+        self.message_shown.set()
+
+    def m_window__log_message(self, **_kwargs):
+        pass
+
+    def m_window__work_done_progress__create(self, **_kwargs):
+        return None
+
+    def m_text_document__publish_diagnostics(self, **_kwargs):
+        pass
+
+
 class ClientServerPair:
     """
     A class to setup a client/server pair.
@@ -86,7 +155,10 @@ class ClientServerPair:
     """
 
     def __init__(
-        self, start_server_in_process=False, check_parent_process=False
+        self,
+        start_server_in_process=False,
+        check_parent_process=False,
+        client_cls=RopeLanguageServer,
     ) -> None:
         # Client to Server pipe
         csr, csw = os.pipe()
@@ -110,7 +182,7 @@ class ClientServerPair:
             self.server_thread = Thread(target=start, args=[self.server])
             self.server_thread.start()
 
-        self.client = RopeLanguageServer(os.fdopen(scr, "rb"), os.fdopen(csw, "wb"))
+        self.client = client_cls(os.fdopen(scr, "rb"), os.fdopen(csw, "wb"))
         self.client_thread = Thread(target=start, args=[self.client])
         self.client_thread.start()
 

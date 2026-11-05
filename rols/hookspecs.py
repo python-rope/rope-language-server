@@ -9,6 +9,15 @@ def rols_code_actions(config, workspace, document, range, context):
     pass
 
 
+@hookspec(firstresult=True)
+def rols_code_action_resolve(config, workspace, document, code_action):
+    """Fill in a code action returned without its edit.
+
+    Return the completed code action, or ``None`` if the action belongs to
+    another plugin.
+    """
+
+
 @hookspec
 def rols_code_lens(config, workspace, document) -> None:
     pass
@@ -64,8 +73,13 @@ def rols_document_symbols(config, workspace, document) -> None:
 
 
 @hookspec(firstresult=True)
-def rols_execute_command(config, workspace, command, arguments) -> None:
-    pass
+def rols_execute_command(config, workspace, document, command, arguments) -> None:
+    """Run ``command``.
+
+    ``workspace`` and ``document`` come from a ``document_uri`` key in the
+    first argument when it is a dict; otherwise they are the root workspace
+    and ``None``.
+    """
 
 
 @hookspec

@@ -32,6 +32,15 @@ PARENT_PROCESS_WATCH_INTERVAL = 10  # 10 s
 MAX_WORKERS = 64
 PYTHON_FILE_EXTENSIONS = (".py", ".pyi")
 CONFIG_FILEs = ("pycodestyle.cfg", "setup.cfg", "tox.ini", ".flake8")
+CODE_ACTION_KINDS = [
+    "quickfix",
+    "refactor",
+    "refactor.extract",
+    "refactor.inline",
+    "refactor.rewrite",
+    "source",
+    "source.organizeImports",
+]
 
 
 class _StreamHandlerWrapper(socketserver.StreamRequestHandler):
@@ -295,7 +304,10 @@ class RopeLanguageServer(MethodDispatcher):
 
     def capabilities(self):
         server_capabilities = {
-            "codeActionProvider": True,
+            "codeActionProvider": {
+                "codeActionKinds": CODE_ACTION_KINDS,
+                "resolveProvider": True,
+            },
             "codeLensProvider": {
                 # We may need to make this configurable
                 "resolveProvider": False,
@@ -420,9 +432,28 @@ class RopeLanguageServer(MethodDispatcher):
         self._hook("rols_initialized")
 
     def code_actions(self, doc_uri: str, range: dict, context: dict):
-        return flatten(
+        context = context or {}
+        actions = flatten(
             self._hook("rols_code_actions", doc_uri, range=range, context=context)
         )
+        only = context.get("only")
+        if only:
+            actions = [
+                action
+                for action in actions
+                if _utils.code_action_kind_matches(action.get("kind"), only)
+            ]
+        return actions
+
+    def code_action_resolve(self, code_action):
+        data = code_action.get("data")
+        doc_uri = data.get("document_uri") if isinstance(data, dict) else None
+        if not isinstance(doc_uri, str):
+            doc_uri = None
+        resolved = self._hook(
+            "rols_code_action_resolve", doc_uri, code_action=code_action
+        )
+        return resolved or code_action
 
     def code_lens(self, doc_uri):
         return flatten(self._hook("rols_code_lens", doc_uri))
@@ -456,7 +487,16 @@ class RopeLanguageServer(MethodDispatcher):
         return self._hook("rols_document_did_save", doc_uri)
 
     def execute_command(self, command, arguments):
-        return self._hook("rols_execute_command", command=command, arguments=arguments)
+        # Commands that act on a document name it in their first argument, so
+        # they run in the workspace that owns the document.
+        doc_uri = None
+        if arguments and isinstance(arguments[0], dict):
+            uri = arguments[0].get("document_uri")
+            if isinstance(uri, str):
+                doc_uri = uri
+        return self._hook(
+            "rols_execute_command", doc_uri, command=command, arguments=arguments
+        )
 
     def format_document(self, doc_uri, options):
         return lambda: self._hook("rols_format_document", doc_uri, options=options)
@@ -581,6 +621,9 @@ class RopeLanguageServer(MethodDispatcher):
 
     def m_completion_item__resolve(self, **completionItem):
         return self.completion_item_resolve(completionItem)
+
+    def m_code_action__resolve(self, **codeAction):
+        return self.code_action_resolve(codeAction)
 
     def m_notebook_document__did_open(
         self, notebookDocument=None, cellTextDocuments=None, **_kwargs

@@ -9,6 +9,7 @@ from typing import Union
 
 import pluggy
 from pluggy._hooks import HookImpl
+from pylsp_jsonrpc.exceptions import JsonRpcException
 
 from rols import ROLS, _utils, hookspecs, uris
 
@@ -38,6 +39,10 @@ class PluginManager(pluggy.PluginManager):
         # enable_tracing will set its own wrapping function at self._inner_hookexec
         try:
             return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+        except JsonRpcException:
+            # Deliberate protocol errors, such as ContentModified, are sent
+            # to the client as the response to the request.
+            raise
         except Exception as e:
             log.warning(f"Failed to load hook {hook_name}: {e}", exc_info=True)
             return []

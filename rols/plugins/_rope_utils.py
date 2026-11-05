@@ -128,3 +128,37 @@ def resource_uri(resource, document):
         return uris.from_fs_path(resource.real_path)
     except Exception:
         return document.uri
+
+
+def normalize_newlines(text):
+    """Convert ``\\r\\n`` and ``\\r`` line endings to ``\\n``, as Rope does."""
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def newline_of(text):
+    """Return the line ending ``text`` uses, defaulting to ``\\n``."""
+    if "\r\n" in text:
+        return "\r\n"
+    if "\r" in text:
+        return "\r"
+    return "\n"
+
+
+def position_to_offset(source, position):
+    """Convert an LSP position in ``source`` to an offset into Rope's text.
+
+    Rope converts every line ending to ``\\n`` when it reads a module, so
+    ``Document.offset_at_position()``, which counts ``\\r\\n`` as two
+    characters, drifts by one character per line in CRLF files. The offset
+    returned here counts each line ending as one character. A position past
+    the end of a line or of the document is clamped.
+    """
+    lines = source.splitlines(True)
+    line = max(position.get("line", 0), 0)
+    character = max(position.get("character", 0), 0)
+    offset = 0
+    for text in lines[:line]:
+        offset += len(text.rstrip("\r\n")) + (1 if text[-1:] in "\r\n" else 0)
+    if line < len(lines):
+        offset += min(character, len(lines[line].rstrip("\r\n")))
+    return offset

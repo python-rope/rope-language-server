@@ -11,7 +11,7 @@ authors = [{name = "Python Language Server Contributors"}]
 description = "Python Language Server for the Language Server Protocol"
 readme = "README.md"
 license = "MIT"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "LICENSES/*"]
 requires-python = ">=3.9"
 dependencies = [
     "docstring-to-markdown",

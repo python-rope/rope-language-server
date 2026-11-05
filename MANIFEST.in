@@ -2,5 +2,6 @@ include README.md
 include versioneer.py
 include rols/_version.py
 include LICENSE
+recursive-include LICENSES *.txt
 include .pylintrc
 recursive-include test *.py

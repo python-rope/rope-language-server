@@ -109,6 +109,7 @@ class ErrorCodes:
     UnknownErrorCode = -32001
     jsonrpcReservedErrorRangeEnd = -32000
     lspReservedErrorRangeStart = -32899
+    RequestFailed = -32803
     ServerCancelled = -32802
     ContentModified = -32801
     RequestCancelled = -32800
