@@ -32,6 +32,8 @@ from rope.refactor import (
     usefunction,
 )
 
+from rols.plugins import _rope_utils
+
 log = logging.getLogger(__name__)
 
 TRIGGER_AUTOMATIC = 2
@@ -751,7 +753,8 @@ class Generate(Action):
 def _diagnostics_at(request, start, end):
     line = request.text.count("\n", 0, start)
     line_start = request.text.rfind("\n", 0, start) + 1
-    first, last = start - line_start, end - line_start
+    first = _rope_utils.utf16_length(request.text[line_start:start])
+    last = _rope_utils.utf16_length(request.text[line_start:end])
     found = []
     for diagnostic in request.diagnostics or []:
         try:

@@ -47,6 +47,19 @@ def test_position_to_offset_counts_crlf_as_one(line, character, expected):
     assert _rope_utils.normalize_newlines(source) == "ab\ncd\nef"
 
 
+@pytest.mark.parametrize("newline", ["\n", "\r\n", "\r"])
+@pytest.mark.parametrize(
+    "line, character, expected",
+    [(0, 0, 0), (0, 1, 0), (0, 2, 1), (0, 3, 2), (0, 99, 2), (1, 2, 4), (9, 0, 5)],
+)
+def test_position_to_offset_counts_utf16_units(newline, line, character, expected):
+    source = f"🦊x{newline}🦊y"
+    assert (
+        _rope_utils.position_to_offset(source, {"line": line, "character": character})
+        == expected
+    )
+
+
 @pytest.mark.parametrize(
     "text, expected", [("a\r\nb", "\r\n"), ("a\rb", "\r"), ("a\nb", "\n"), ("", "\n")]
 )
@@ -68,10 +81,17 @@ def test_newline_of(text, expected):
         ("", "x = 1\n"),
         ("žluťoučký = 1\nkůň = 2\n", "žluťoučký = 1\nkůň = 3\nend\n"),
         ("a\n", "b\nc\na\n"),
+        ('x = "🦊"', 'x = "fox"'),
+        ('x = "🦊"', 'x = "🦊"\nend\n'),
     ],
 )
 def test_line_diff_reproduces_new_text(old, new):
     assert apply_text_edits(old, _rope_edits.line_diff(old, new)) == new
+
+
+def test_line_diff_ends_at_utf16_column():
+    (edit,) = _rope_edits.line_diff('x = "🦊"', 'x = "fox"')
+    assert edit["range"]["end"] == {"line": 0, "character": 8}
 
 
 def test_line_diff_keeps_crlf():

@@ -84,9 +84,10 @@ def apply_text_edits(text, edits):
     def offset(position):
         if position["line"] >= len(lines):
             return len(text)
-        return (
-            sum(len(line) for line in lines[: position["line"]]) + position["character"]
-        )
+        line = lines[position["line"]]
+        prefix = line.encode("utf-16-le")[: 2 * position["character"]]
+        column = len(prefix.decode("utf-16-le", errors="ignore"))
+        return sum(len(line) for line in lines[: position["line"]]) + column
 
     for edit in sorted(
         edits,

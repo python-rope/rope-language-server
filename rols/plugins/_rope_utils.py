@@ -144,21 +144,29 @@ def newline_of(text):
     return "\n"
 
 
-def position_to_offset(source, position):
-    """Convert an LSP position in ``source`` to an offset into Rope's text.
+def utf16_length(text):
+    """Return the number of UTF-16 code units used by an LSP string."""
+    return len(text.encode("utf-16-le", errors="surrogatepass")) // 2
 
-    Rope converts every line ending to ``\\n`` when it reads a module, so
-    ``Document.offset_at_position()``, which counts ``\\r\\n`` as two
-    characters, drifts by one character per line in CRLF files. The offset
-    returned here counts each line ending as one character. A position past
-    the end of a line or of the document is clamped.
+
+def position_to_offset(source, position):
+    """Convert an LSP UTF-16 position to an offset into Rope's text.
+
+    Rope normalises line endings to ``\\n`` and counts Unicode code points.
+    Positions past the end of a line or the document are clamped. A position
+    inside a surrogate pair is clamped to the start of that character.
     """
-    lines = source.splitlines(True)
+    source = normalize_newlines(source)
+    lines = source.split("\n")
     line = max(position.get("line", 0), 0)
     character = max(position.get("character", 0), 0)
-    offset = 0
-    for text in lines[:line]:
-        offset += len(text.rstrip("\r\n")) + (1 if text[-1:] in "\r\n" else 0)
-    if line < len(lines):
-        offset += min(character, len(lines[line].rstrip("\r\n")))
+    if line >= len(lines):
+        return len(source)
+    offset = sum(len(text) + 1 for text in lines[:line])
+    for char in lines[line]:
+        units = 2 if ord(char) > 0xFFFF else 1
+        if character < units:
+            break
+        character -= units
+        offset += 1
     return offset

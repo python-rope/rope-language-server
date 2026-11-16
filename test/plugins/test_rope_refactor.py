@@ -347,6 +347,23 @@ def test_crlf_document(session_factory):
     assert "    extracted_variable = a + b\r\n" in new
 
 
+@pytest.mark.parametrize("capabilities", [COMMANDS_ONLY, RESOLVE, DOCUMENT_CHANGES])
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_extract_after_astral_character(session_factory, capabilities, newline):
+    session = session_factory(capabilities)
+    source = f'def f():{newline}    return ("🦊", 40 + 2){newline}'
+    uri = session.open("m.py", source)
+    line = source.splitlines()[1]
+    start = len(line[: line.index("40 + 2")].encode("utf-16-le")) // 2
+    action = find(
+        session.code_actions(uri, rng(1, start, 1, start + 6)), "Extract variable"
+    )
+    new = apply_workspace_edit({uri: source}, session.edit_for(action))[uri]
+    assert f"    extracted_variable = 40 + 2{newline}" in new
+    assert f'    return ("🦊", extracted_variable){newline}' in new
+    assert_parses(new)
+
+
 # Inline
 
 
@@ -610,6 +627,20 @@ def test_generate(session_factory):
     assert generated[1]["diagnostics"] == [diagnostic]
     new = apply_workspace_edit({uri: source}, session.edit_for(generated[1]))[uri]
     assert "def undef_name(arg0):\n    pass\n" in new
+    assert_parses(new)
+
+
+def test_generate_matches_utf16_diagnostic(session_factory):
+    session = session_factory()
+    source = 'print("🦊🦊🦊", x())\n'
+    uri = session.open("m.py", source)
+    start = len(source[: source.index("x()")].encode("utf-16-le")) // 2
+    diagnostic = {"range": rng(0, start, 0, start + 1), "message": "undefined name 'x'"}
+    actions = session.code_actions(uri, rng(0, start), diagnostics=[diagnostic])
+    action = find(actions, "Generate function 'x'")
+    assert action["diagnostics"] == [diagnostic]
+    new = apply_workspace_edit({uri: source}, session.edit_for(action))[uri]
+    assert "def x():\n    pass\n" in new
     assert_parses(new)
 
 

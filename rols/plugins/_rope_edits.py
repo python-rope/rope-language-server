@@ -32,7 +32,7 @@ def _end_position(lines):
         return {"line": 0, "character": 0}
     if lines[-1].endswith("\n"):
         return {"line": len(lines), "character": 0}
-    return {"line": len(lines) - 1, "character": len(lines[-1])}
+    return {"line": len(lines) - 1, "character": _rope_utils.utf16_length(lines[-1])}
 
 
 def _position(lines, index):

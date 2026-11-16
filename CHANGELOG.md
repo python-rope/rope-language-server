@@ -17,6 +17,8 @@
   runs in the workspace of the document named in its arguments.
 
 ### Fixes
+* Convert refactoring code-action ranges, diagnostic positions and edit end
+  positions between LSP UTF-16 units and Rope's Unicode code-point offsets.
 * Require an actual module-level `__all__` assignment before offering organise
   imports in package initialisers. Comments and strings mentioning `__all__`
   no longer let Rope remove package re-exports.

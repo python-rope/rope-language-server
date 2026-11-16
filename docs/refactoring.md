@@ -131,9 +131,9 @@ The IDs are `extract_method`, `extract_variable`, `inline`, `use_function`,
 
 - Rope works with the contents of open documents, including unsaved changes, and
   with the files on disk for everything else.
-- Positions count Unicode code points, not the UTF-16 code units of the LSP
-  default, as everywhere in the server. Lines with characters outside the Basic
-  Multilingual Plane can be off by one.
+- Refactoring code actions use LSP UTF-16 positions, including for characters
+  outside the Basic Multilingual Plane. Other server features may still count
+  Unicode code points instead.
 - A refactoring that has started cannot be interrupted. Requests are handled one
   at a time, so a large inline or Use function across a big project delays later
   requests until it finishes.
