@@ -23,6 +23,7 @@ from pylsp_jsonrpc.exceptions import JsonRpcException
 from rope.base.exceptions import RefactoringError
 
 from rols import _utils, hookimpl, lsp
+from rols.endpoint import check_request_cancelled
 from rols.plugins import _rope_edits, _rope_utils
 from rols.plugins._rope_task_handle import PylspTaskHandle
 from rols.workspace import Document
@@ -284,6 +285,8 @@ def _compute_edit(config, workspace, document, command, arguments):
         for name in action.names_used_elsewhere(params):
             _check_modules_parse(project, name)
 
+    # Let Rope finish on the document-owning thread, then discard a cancelled
+    # request's result. Its task handle deliberately never interrupts the work.
     task_handle = PylspTaskHandle(workspace, threading.Event())
     try:
         changes = action.changes(project, resource, params, task_handle)
@@ -333,6 +336,7 @@ def rols_execute_command(config, workspace, document, command, arguments):
         log.exception("Rope refactoring %s failed", command)
         workspace.show_message(f"Rope: {exc}", msg_type=lsp.MessageType.Error)
         return None
+    check_request_cancelled()
     if edit is None:
         workspace.show_message(
             "Rope: nothing to change.", msg_type=lsp.MessageType.Info
@@ -360,6 +364,7 @@ def rols_code_action_resolve(config, workspace, document, code_action):
         raise JsonRpcException(
             f"Rope: {exc}", code=lsp.ErrorCodes.RequestFailed
         ) from exc
+    check_request_cancelled()
     if edit is None:
         raise JsonRpcException(
             "Rope: nothing to change.", code=lsp.ErrorCodes.RequestFailed

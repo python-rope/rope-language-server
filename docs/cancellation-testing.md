@@ -29,6 +29,11 @@ workspace cleanup after EOF or an exit notification, with or without a preceding
 shutdown request. Cleanup must happen once, after pending work, on the same thread
 as document operations.
 
+The refactoring tests also cancel a command or resolve request after Rope starts
+computing a cross-file edit. Rope must finish before queued document changes run,
+but the cancelled request must return `-32800` without sending an edit. A later
+refactoring must still work.
+
 ## Headless Neovim test
 
 With Neovim and the project's Python dependencies installed, run from the checkout:

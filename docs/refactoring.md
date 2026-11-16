@@ -136,7 +136,9 @@ The IDs are `extract_method`, `extract_variable`, `inline`, `use_function`,
   Unicode code points instead.
 - A refactoring that has started cannot be interrupted. Requests are handled one
   at a time, so a large inline or Use function across a big project delays later
-  requests until it finishes.
+  requests until it finishes. If you cancel a command or resolve request while
+  Rope is running, the server discards the result instead of returning or
+  applying its edit.
 
 ## Coexistence with autoimport
 

@@ -11,7 +11,7 @@ import pytest
 
 from pylsp_jsonrpc.streams import JsonRpcStreamReader, JsonRpcStreamWriter
 
-from rols.endpoint import OrderedEndpoint
+from rols.endpoint import OrderedEndpoint, check_request_cancelled
 from rols.python_lsp import RopeLanguageServer
 
 
@@ -67,6 +67,46 @@ def test_cancel_queued_request_preserves_notification_order():
     finally:
         release.set()
         endpoint.shutdown()
+
+
+def test_running_handler_can_check_cancellation_without_interrupting_work():
+    entered, release, finished = Event(), Event(), Event()
+    calls, responses = [], []
+
+    def slow(params):
+        entered.set()
+        assert release.wait(5)
+        calls.append("completed")
+        check_request_cancelled()
+        calls.append("result")
+
+    def following(params):
+        check_request_cancelled()
+        return "pong"
+
+    def receive(message):
+        responses.append(message)
+        if message["id"] == 2:
+            finished.set()
+
+    endpoint = OrderedEndpoint({"slow": slow, "following": following}, receive)
+    try:
+        check_request_cancelled()  # Safe outside a request context.
+        request(endpoint, 1, "slow")
+        assert entered.wait(5)
+        cancel(endpoint, {"id": 1})
+        request(endpoint, 2, "following")
+        assert calls == []
+        release.set()
+        assert finished.wait(5)
+        assert calls == ["completed"]
+        assert responses[0]["error"]["code"] == -32800
+        assert responses[1]["result"] == "pong"
+        check_request_cancelled()
+    finally:
+        release.set()
+        endpoint.shutdown()
+    assert endpoint._pending == {}
 
 
 @pytest.mark.parametrize("params", [None, {}, [], {"id": []}, {"id": True}])

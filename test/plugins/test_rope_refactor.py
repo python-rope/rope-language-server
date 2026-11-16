@@ -930,7 +930,7 @@ def test_cancelled_queued_command_sends_no_edit(session_factory):
     while time.monotonic() < deadline:
         with endpoint._pending_lock:
             state = endpoint._pending.get("queued-command")
-            if state is not None and state["cancelled"]:
+            if state is not None and state.is_set():
                 break
         time.sleep(0.01)
     release.set()
@@ -941,6 +941,73 @@ def test_cancelled_queued_command_sends_no_edit(session_factory):
     # A later request is answered, so the cancelled one was skipped.
     session.code_actions(uri, rng(2, 12))
     assert session.client.applied_edits == []
+
+
+@pytest.mark.parametrize("capabilities", [COMMANDS_ONLY, RESOLVE])
+def test_cancelled_running_refactoring_sends_no_edit(session_factory, capabilities):
+    session = session_factory(capabilities)
+    uri = session.open("helper_mod.py", HELPER)
+    action = find(session.code_actions(uri, rng(0, 5)), "Inline method 'helper'")
+    if "data" in action:
+        method, params = "codeAction/resolve", action
+    else:
+        command = action["command"]
+        method = "workspace/executeCommand"
+        params = {"command": command["command"], "arguments": command["arguments"]}
+    endpoint = session.server._endpoint
+    entered, release, completed, cancelled = (threading.Event() for _ in range(4))
+    original_changes = refactor_actions.Inline.changes
+    original_notification = endpoint._handle_notification
+
+    def slow_changes(*args, **kwargs):
+        entered.set()
+        assert release.wait(10)
+        changes = original_changes(*args, **kwargs)
+        completed.set()
+        return changes
+
+    def observe_cancel(method, params):
+        original_notification(method, params)
+        if method == "$/cancelRequest" and params.get("id") == "running-refactoring":
+            cancelled.set()
+
+    with (
+        patch.object(refactor_actions.Inline, "changes", slow_changes),
+        patch.object(endpoint, "_handle_notification", observe_cancel),
+        patch.object(
+            session.server.workspace,
+            "apply_edit",
+            wraps=session.server.workspace.apply_edit,
+        ) as apply_edit,
+    ):
+        with patch.object(
+            session.client._endpoint,
+            "_id_generator",
+            return_value="running-refactoring",
+        ):
+            pending = session.client._endpoint.request(method, params)
+        try:
+            assert entered.wait(5)
+            session.notify("$/cancelRequest", {"id": "running-refactoring"})
+            assert cancelled.wait(5)
+            # Document mutations stay queued while Rope finishes its work.
+            session.change(uri, HELPER + "\n", 2)
+            assert session.server.workspace.get_document(uri).source == HELPER
+            assert not completed.is_set()
+            assert not pending.done()
+        finally:
+            release.set()
+        with pytest.raises(JsonRpcException) as error:
+            pending.result(timeout=CALL_TIMEOUT_IN_SECONDS)
+        assert error.value.code == ErrorCodes.RequestCancelled
+        assert completed.is_set()
+        apply_edit.assert_not_called()
+
+    # Cancellation does not leak into later requests or lose queued changes.
+    action = find(session.code_actions(uri, rng(0, 5)), "Inline method 'helper'")
+    assert session.server.workspace.get_document(uri).source == HELPER + "\n"
+    assert session.client.applied_edits == []
+    assert session.edit_for(action)
 
 
 def test_command_routed_to_the_documents_workspace(session_factory, tmp_path):

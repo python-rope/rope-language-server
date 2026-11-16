@@ -17,6 +17,8 @@
   runs in the workspace of the document named in its arguments.
 
 ### Fixes
+* Discard cancelled refactoring command and resolve results before sending an
+  edit, while letting Rope finish without concurrent document mutations.
 * Convert refactoring code-action ranges, diagnostic positions and edit end
   positions between LSP UTF-16 units and Rope's Unicode code-point offsets.
 * Require an actual module-level `__all__` assignment before offering organise
