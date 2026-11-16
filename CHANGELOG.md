@@ -16,6 +16,11 @@
 * Code action requests honour `context.only`, and `workspace/executeCommand`
   runs in the workspace of the document named in its arguments.
 
+### Fixes
+* Require an actual module-level `__all__` assignment before offering organise
+  imports in package initialisers. Comments and strings mentioning `__all__`
+  no longer let Rope remove package re-exports.
+
 ## Version 1.15.0 (2026/07/27)
 
 ### New features

@@ -653,6 +653,23 @@ def _keeps_noqa_imports(old, new):
     return True
 
 
+def _defines_all(tree):
+    """Whether the module explicitly assigns its public exports."""
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, ast.AnnAssign) and node.value is not None:
+            targets = [node.target]
+        else:
+            continue
+        if any(
+            isinstance(target, ast.Name) and target.id == "__all__"
+            for target in targets
+        ):
+            return True
+    return False
+
+
 class OrganizeImports(Action):
     id = "organize_imports"
     command = "rols.source.organize_imports"
@@ -663,7 +680,7 @@ class OrganizeImports(Action):
             return []
         # Rope removes imports that are only re-exported or only used in
         # string annotations (python-rope/rope#368, #369).
-        if request.filename == "__init__.py" and "__all__" not in request.text:
+        if request.filename == "__init__.py" and not _defines_all(request.tree):
             return []
         if _has_string_annotations(request.tree):
             return []

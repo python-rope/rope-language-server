@@ -537,6 +537,23 @@ def test_organise_imports(session_factory):
     [
         # Re-exports in a package without __all__ (python-rope/rope#368)
         ("pkg/__init__.py", "from pkg.impl import thing\n"),
+        # Comments, strings and other scopes do not define module exports.
+        (
+            "pkg/__init__.py",
+            "# TODO: define __all__\nfrom pkg.impl import thing\n",
+        ),
+        (
+            "pkg/__init__.py",
+            '"""Exports will eventually use __all__."""\nfrom pkg.impl import thing\n',
+        ),
+        (
+            "pkg/__init__.py",
+            "from pkg.impl import thing\ndef f():\n    __all__ = []\n",
+        ),
+        (
+            "pkg/__init__.py",
+            "from pkg.impl import thing\n__all__: list\n",
+        ),
         # Names used only in string annotations (python-rope/rope#369)
         ("m.py", "from os import PathLike\n\n\ndef f(p: 'PathLike'):\n    pass\n"),
         # Unused imports the user keeps on purpose (python-rope/rope#368)
@@ -551,6 +568,23 @@ def test_organise_imports_not_offered(session_factory, name, source):
     uri = session.open(name, source)
     actions = session.code_actions(uri, rng(0, 0), only=["source"])
     assert actions == []
+
+
+@pytest.mark.parametrize(
+    "assignment", ["__all__ = ['thing']", "__all__: list = ['thing']"]
+)
+def test_organise_imports_with_explicit_exports(session_factory, assignment):
+    session = session_factory()
+    session.write("pkg/impl.py", "def thing():\n    pass\n")
+    source = f"import sys\nfrom pkg.impl import thing\n\n{assignment}\n"
+    uri = session.open("pkg/__init__.py", source)
+    action = find(
+        session.code_actions(uri, rng(0, 0), only=["source"]), "Organise imports"
+    )
+    new = apply_workspace_edit({uri: source}, session.edit_for(action))[uri]
+    assert "from pkg.impl import thing" in new
+    assert assignment in new
+    assert "import sys" not in new
 
 
 # Generate
