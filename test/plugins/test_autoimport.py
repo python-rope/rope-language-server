@@ -491,6 +491,66 @@ def position(line, character):
     return {"line": line, "character": character}
 
 
+def test_autoimport_completions_preserve_rope_completions(
+    client_server_pair, tmp_path
+) -> None:
+    client, server = client_server_pair
+    source = "def os_local():\n    pass\n\nos"
+    path = tmp_path / "sample.py"
+    path.write_text(source, encoding="utf-8")
+    doc_uri = uris.from_fs_path(str(path))
+    settings = {
+        "rols": {
+            "plugins": {
+                "rope_autoimport": {
+                    "enabled": True,
+                    "memory": True,
+                    "completions": {"enabled": True},
+                },
+                "rope_completion": {"enabled": True},
+            }
+        }
+    }
+    autoimport_cache = AutoimportCache()
+    with (
+        patch("rols.plugins.rope_autoimport.cache", autoimport_cache),
+        patch.object(autoimport_cache, "reload_cache"),
+        patch.object(server, "lint"),
+    ):
+        send_initialize_request(client, settings)
+        client._endpoint.notify("initialized", {})
+
+        def index_os():
+            autoimport = server.workspace._rope_autoimport(
+                server.config.settings().get("rope", {}), memory=True
+            )
+            autoimport.generate_modules_cache(modules=["os"], single_thread=True)
+
+        server._endpoint.run_on_worker(index_os)
+        client._endpoint.notify(
+            "textDocument/didOpen",
+            {
+                "textDocument": {
+                    "uri": doc_uri,
+                    "languageId": "python",
+                    "version": 1,
+                    "text": source,
+                }
+            },
+        )
+        response = client._endpoint.request(
+            "textDocument/completion",
+            {
+                "textDocument": {"uri": doc_uri},
+                "position": position(3, 2),
+            },
+        ).result(timeout=CALL_TIMEOUT_IN_SECONDS)
+
+    items = response["items"]
+    assert any(contains_autoimport_completion(item, "os") for item in items)
+    assert any(item["label"] == "os_local" for item in items)
+
+
 @pytest.mark.skipif(IS_WIN, reason="Flaky on Windows")
 def test_autoimport_code_actions_and_completions_for_notebook_document(
     client_server_pair,
