@@ -1,4 +1,6 @@
-# Copyright 2017 Palantir Technologies, Inc.
+# Copyright 2017-2020 Palantir Technologies, Inc.
+# Copyright 2021-2025 Python Language Server Contributors.
+# Copyright 2026- Rope Language Server Contributors.
 from rols import uris
 from rols.plugins.rope_definition import rols_definitions
 from rols.workspace import Document

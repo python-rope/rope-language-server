@@ -1,4 +1,6 @@
-# Copyright 2026- Python Language Server Contributors (Rope backend).
+# Copyright 2017-2020 Palantir Technologies, Inc.
+# Copyright 2021-2025 Python Language Server Contributors.
+# Copyright 2026- Rope Language Server Contributors.
 # Parts adapted from pylsp-rope (https://github.com/python-rope/pylsp-rope),
 # Copyright (c) 2021 Lie Ryan, MIT licence; see LICENSES/pylsp-rope.txt.
 
