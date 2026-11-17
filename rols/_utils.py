@@ -1,6 +1,7 @@
 # Copyright 2017-2020 Palantir Technologies, Inc.
 # Copyright 2021- Python Language Server Contributors.
 
+import ast
 import functools
 import inspect
 import logging
@@ -303,6 +304,13 @@ formatters = {"ruff": RuffFormatter(), "black": BlackFormatter()}
 def format_signature(signature: str, config: dict, signature_formatter: str) -> str:
     """Formats signature using Ruff or Black if the selected tool is available."""
     as_func = f"def {signature.strip()}:\n    pass"
+    try:
+        ast.parse(as_func)
+    except SyntaxError:
+        # Calltips can be expressions such as ``platform.system()``. They are
+        # valid hover signatures but cannot be wrapped in a ``def`` for Black.
+        return signature
+
     line_length = config.get("line_length", 88)
     formatter = formatters[signature_formatter]
     if formatter.is_installed:

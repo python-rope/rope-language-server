@@ -314,6 +314,21 @@ def test_signature_formatter_uses_black() -> None:
     ) == _utils.wrap_signature("example(value: int = 1) -> str")
 
 
+def test_signature_formatter_skips_dotted_calltips() -> None:
+    formatter = _utils.formatters["black"]
+    with (
+        mock.patch.object(
+            type(formatter), "is_installed", new_callable=mock.PropertyMock
+        ) as installed,
+        mock.patch.object(formatter, "format") as format_code,
+    ):
+        installed.return_value = True
+        assert _utils.format_signature("platform.system()", {}, "black") == (
+            "platform.system()"
+        )
+        format_code.assert_not_called()
+
+
 def test_signature_formatter_uses_ruff() -> None:
     formatter = _utils.formatters["ruff"]
     assert formatter.command == ["ruff", "format"]
